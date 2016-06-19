@@ -1,0 +1,75 @@
+#!/bin/bash
+
+#variables
+mailaddr_to=YOURMAIL@DOMAIN.TLD
+mailaddr_from=MAILFROM@YOURDOMAIN.TLD
+tspath=/usr/local/bin/teamspeak3-server_linux_amd64/logs
+tsuser=teamspeak
+email=yes
+
+
+#cleaning work environment
+rm -f /tmp/teamspeak_daily_log*
+
+#collecting daily log
+cat $tspath/ts3server_* | grep $(date -d "yesterday" '+%Y-%m-%d') >> /tmp/teamspeak_daily_log
+
+##preparing report
+echo -e "LogReport Teamspeak $(date -d "yesterday" '+%d.%m.%Y')\n" >> /tmp/teamspeak_daily_log.1
+echo -e "---------------------- Teamspeak -------------------------\n" >> /tmp/teamspeak_daily_log.1
+echo -e "-------------------- Server -----------------------\n" >> /tmp/teamspeak_daily_log.1
+#server
+echo -e "Status : $($tspath/ts3server_startscript.sh status )\n" >> /tmp/teamspeak_daily_log.1
+cat /tmp/teamspeak_daily_log | grep ServerMain >> /tmp/teamspeak_daily_log.server
+cat /tmp/teamspeak_daily_log | grep stopped >> /tmp/teamspeak_daily_log.server
+
+cat /tmp/teamspeak_daily_log.server | sort -M -k 2 >> /tmp/teamspeak_daily_log.tmp
+cat /tmp/teamspeak_daily_log.tmp >> /tmp/teamspeak_daily_log.1
+echo -e "--------------------- Error -----------------------\n" >> /tmp/teamspeak_daily_log.1
+#error
+cat /tmp/teamspeak_daily_log | grep ERROR >> /tmp/teamspeak_daily_log.1
+echo -e "------------------- Error End ---------------------\n" >> /tmp/teamspeak_daily_log.1
+echo -e "-------------------- Warning ----------------------\n" >> /tmp/teamspeak_daily_log.1
+#warning
+cat /tmp/teamspeak_daily_log | grep WARNING >> /tmp/teamspeak_daily_log.1
+echo -e "------------------ Warning End --------------------\n" >> /tmp/teamspeak_daily_log.1
+echo -e "------------------ Server End ---------------------\n" >> /tmp/teamspeak_daily_log.1
+echo -e "------------------ Complaint ----------------------\n" >> /tmp/teamspeak_daily_log.1
+#complaint
+cat /tmp/teamspeak_daily_log | grep complaint* >> /tmp/teamspeak_daily_log.1
+echo -e "---------------- Complaint End --------------------\n" >> /tmp/teamspeak_daily_log.1
+echo -e "---------------------- Ban ------------------------\n" >> /tmp/teamspeak_daily_log.1
+#ban
+cat /tmp/teamspeak_daily_log |grep "ban added" >> /tmp/teamspeak_daily_log.ban
+cat /tmp/teamspeak_daily_log |grep BanManager >> /tmp/teamspeak_daily_log.ban
+
+cat /tmp/teamspeak_daily_log.ban | sort -M -k 2 >> /tmp/teamspeak_daily_log.tmp1
+cat /tmp/teamspeak_daily_log.tmp1 >> /tmp/teamspeak_daily_log.1
+echo -e "-------------------- Ban End ----------------------\n" >> /tmp/teamspeak_daily_log.1
+echo -e "---------------------- Kick -----------------------\n" >> /tmp/teamspeak_daily_log.1
+
+cat /tmp/teamspeak_daily_log | grep "reason 'invokerid" >> /tmp/teamspeak_daily_log.1
+echo -e "-------------------- Kick End ---------------------\n" >> /tmp/teamspeak_daily_log.1
+echo -e "------------------- Permission --------------------\n" >> /tmp/teamspeak_daily_log.1
+
+cat /tmp/teamspeak_daily_log | grep permission >> /tmp/teamspeak_daily_log.1
+echo -e "----------------- Permission End ------------------\n" >> /tmp/teamspeak_daily_log.1
+echo -e "-------------------- Teamspeak End -----------------------" >> /tmp/teamspeak_daily_log.1
+
+##sorting log entries and pushing to logfile
+#2016-04-12 10:33:52.637083 sample timestamp
+cat /tmp/teamspeak_daily_log.1 >> /var/log/teamspeak/teamspeak_report.log
+
+#mail daily reports
+if [ $email == yes ]; then
+		#file is not empty
+		echo -e "To: $mailaddr_to" > /tmp/teamspeak_daily_log.report
+		echo -e "From: $mailaddr_from" >> /tmp/teamspeak_daily_log.report
+		echo -e "Subject: LogReport Teamspeak $(date -d "yesterday" '+%d.%m.%Y')" >> /tmp/teamspeak_daily_log.report
+		echo "" >> /tmp/teamspeak_daily_log.report
+		cat /tmp/teamspeak_daily_log.1 >> /tmp/teamspeak_daily_log.report
+		su $tsuser -s /bin/sh -c 'cat /tmp/teamspeak_daily_log.report | /usr/sbin/sendmail -t'
+fi
+
+#removing tmp
+rm -f /tmp/teamspeak_daily_log*
