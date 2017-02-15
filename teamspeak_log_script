@@ -3,7 +3,8 @@
 #variables
 mailaddr_to=YOURMAIL@DOMAIN.TLD
 mailaddr_from=MAILFROM@YOURDOMAIN.TLD
-tspath=/usr/local/bin/teamspeak3-server_linux_amd64/logs
+tslogs=/etc/teamspeak3-server_linux_amd64/logs
+tspath=/etc/teamspeak3-server_linux_amd64
 tsuser=teamspeak
 email=yes
 
@@ -12,7 +13,7 @@ email=yes
 rm -f /tmp/teamspeak_daily_log*
 
 #collecting daily log
-cat $tspath/ts3server_* | grep $(date -d "yesterday" '+%Y-%m-%d') >> /tmp/teamspeak_daily_log
+cat $tslogs/ts3server_* | grep $(date -d "yesterday" '+%Y-%m-%d') >> /tmp/teamspeak_daily_log
 
 ##preparing report
 echo -e "LogReport Teamspeak $(date -d "yesterday" '+%d.%m.%Y')\n" >> /tmp/teamspeak_daily_log.1
@@ -33,6 +34,11 @@ echo -e "-------------------- Warning ----------------------\n" >> /tmp/teamspea
 #warning
 cat /tmp/teamspeak_daily_log | grep WARNING >> /tmp/teamspeak_daily_log.1
 echo -e "------------------ Warning End --------------------\n" >> /tmp/teamspeak_daily_log.1
+#accounting
+echo -e "------------------- Accounting --------------------\n" >> /tmp/teamspeak_daily_log.1
+cat /tmp/teamspeak_daily_log | grep Accounting >> /tmp/teamspeak_daily_log.1
+echo -e "----------------- Accounting End ------------------\n" >> /tmp/teamspeak_daily_log.1
+
 echo -e "------------------ Server End ---------------------\n" >> /tmp/teamspeak_daily_log.1
 echo -e "------------------ Complaint ----------------------\n" >> /tmp/teamspeak_daily_log.1
 #complaint
@@ -54,6 +60,21 @@ echo -e "------------------- Permission --------------------\n" >> /tmp/teamspea
 
 cat /tmp/teamspeak_daily_log | grep permission >> /tmp/teamspeak_daily_log.1
 echo -e "----------------- Permission End ------------------\n" >> /tmp/teamspeak_daily_log.1
+echo -e "------------------ Group change -------------------\n" >> /tmp/teamspeak_daily_log.1
+echo -e "--- added ---\n"
+cat /tmp/teamspeak_daily_log | grep 'was added to servergroup' >> /tmp/teamspeak_daily_log.1
+
+echo -e "--- removed ---\n"
+cat /tmp/teamspeak_daily_log | grep 'was removed from servergroup' >> /tmp/teamspeak_daily_log.1
+
+echo -e "---------------- Group change End -----------------\n" >> /tmp/teamspeak_daily_log.1
+echo -e "--------------------- Channel ---------------------\n" >> /tmp/teamspeak_daily_log.1
+
+#|VirtualServerBase|1  |channel 'Test04'(id:281) created by sample log entrie
+cat /tmp/teamspeak_daily_log | grep channel >> /tmp/teamspeak_daily_log.channel
+#remove the server query permission skipchannel log lines
+cat /tmp/teamspeak_daily_log.channel | grep VirtualServerBase >> /tmp/teamspeak_daily_log.1
+echo -e "------------------- Channel End -------------------\n" >> /tmp/teamspeak_daily_log.1
 echo -e "-------------------- Teamspeak End -----------------------" >> /tmp/teamspeak_daily_log.1
 
 ##sorting log entries and pushing to logfile
