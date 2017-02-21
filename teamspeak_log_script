@@ -3,6 +3,8 @@
 #variables
 mailaddr_to=YOURMAIL@DOMAIN.TLD
 mailaddr_from=MAILFROM@YOURDOMAIN.TLD
+mailaddr_to=nico@magicbroccoli.de
+mailaddr_from=teamspeak@magicbroccoli.de
 tslogs=/etc/teamspeak3-server_linux_amd64/logs
 tspath=/etc/teamspeak3-server_linux_amd64
 FILE=/tmp/teamspeak_daily_log.tmp
@@ -32,9 +34,8 @@ cat /tmp/teamspeak_daily_log.server | sort -M -k 2 >> /tmp/teamspeak_daily_log.t
 if [[ -s $FILE ]]
 	then
 		cat /tmp/teamspeak_daily_log.tmp >> /tmp/teamspeak_daily_log.1
-	else
-		rm /tmp/teamspeak_daily_log.tmp
 fi
+rm /tmp/teamspeak_daily_log.tmp
 
 ##error
 cat /tmp/teamspeak_daily_log | grep ERROR >> /tmp/teamspeak_daily_log.tmp
@@ -44,7 +45,6 @@ if [[ -s $FILE ]]
 		echo -e "--------------------- Error -----------------------\n" >> /tmp/teamspeak_daily_log.1
 		cat /tmp/teamspeak_daily_log.tmp >> /tmp/teamspeak_daily_log.1
 		echo -e "------------------- Error End ---------------------\n" >> /tmp/teamspeak_daily_log.1
-	else
 fi
 rm /tmp/teamspeak_daily_log.tmp
 
@@ -56,7 +56,6 @@ if [[ -s $FILE ]]
 		echo -e "-------------------- Warning ----------------------\n" >> /tmp/teamspeak_daily_log.1
 		cat /tmp/teamspeak_daily_log.tmp >> /tmp/teamspeak_daily_log.1
 		echo -e "------------------ Warning End --------------------\n" >> /tmp/teamspeak_daily_log.1
-	else
 fi
 rm /tmp/teamspeak_daily_log.tmp
 
@@ -68,7 +67,6 @@ if [[ -s $FILE ]]
 		echo -e "------------------- Accounting --------------------\n" >> /tmp/teamspeak_daily_log.1
 		cat /tmp/teamspeak_daily_log.tmp >> /tmp/teamspeak_daily_log.1
 		echo -e "----------------- Accounting End ------------------\n" >> /tmp/teamspeak_daily_log.1
-	else
 fi
 rm /tmp/teamspeak_daily_log.tmp
 echo -e "------------------ Server End ---------------------\n" >> /tmp/teamspeak_daily_log.1
@@ -81,7 +79,6 @@ if [[ -s $FILE ]]
 		echo -e "------------------ Complaint ----------------------\n" >> /tmp/teamspeak_daily_log.1
 		cat /tmp/teamspeak_daily_log.tmp >> /tmp/teamspeak_daily_log.1
 		echo -e "---------------- Complaint End --------------------\n" >> /tmp/teamspeak_daily_log.1
-	else
 fi
 rm /tmp/teamspeak_daily_log.tmp
 
@@ -96,7 +93,6 @@ if [[ -s $FILE ]]
 		echo -e "---------------------- Ban ------------------------\n" >> /tmp/teamspeak_daily_log.1
 		cat /tmp/teamspeak_daily_log.tmp >> /tmp/teamspeak_daily_log.1
 		echo -e "-------------------- Ban End ----------------------\n" >> /tmp/teamspeak_daily_log.1
-	else
 fi
 rm /tmp/teamspeak_daily_log.tmp
 
@@ -108,7 +104,6 @@ if [[ -s $FILE ]]
 		echo -e "------------------ Complaint ----------------------\n" >> /tmp/teamspeak_daily_log.1
 		cat /tmp/teamspeak_daily_log.tmp >> /tmp/teamspeak_daily_log.1
 		echo -e "---------------- Complaint End --------------------\n" >> /tmp/teamspeak_daily_log.1
-	else
 fi
 rm /tmp/teamspeak_daily_log.tmp
 
@@ -120,7 +115,6 @@ if [[ -s $FILE ]]
 		echo -e "------------------- Permission --------------------\n" >> /tmp/teamspeak_daily_log.1
 		cat /tmp/teamspeak_daily_log.tmp >> /tmp/teamspeak_daily_log.1
 		echo -e "----------------- Permission End ------------------\n" >> /tmp/teamspeak_daily_log.1
-	else
 fi
 rm /tmp/teamspeak_daily_log.tmp
 
@@ -136,7 +130,6 @@ if [[ -s $FILE ]]
 		echo -e "--- removed ---\n" >> /tmp/teamspeak_daily_log.1
 		cat /tmp/teamspeak_daily_log.tmp | grep 'was removed from servergroup' >> /tmp/teamspeak_daily_log.1
 		echo -e "---------------- Group change End -----------------\n" >> /tmp/teamspeak_daily_log.1
-	else
 fi
 rm /tmp/teamspeak_daily_log.tmp
 
@@ -150,7 +143,6 @@ if [[ -s $FILE ]]
 		echo -e "--------------------- Channel ---------------------\n" >> /tmp/teamspeak_daily_log.1
 		cat /tmp/teamspeak_daily_log.tmp >> /tmp/teamspeak_daily_log.1
 		echo -e "------------------- Channel End -------------------\n" >> /tmp/teamspeak_daily_log.1
-	else
 fi
 rm /tmp/teamspeak_daily_log.tmp
 echo -e "-------------------- Teamspeak End -----------------------" >> /tmp/teamspeak_daily_log.1
