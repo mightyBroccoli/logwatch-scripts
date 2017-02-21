@@ -5,6 +5,7 @@ mailaddr_to=YOURMAIL@DOMAIN.TLD
 mailaddr_from=MAILFROM@YOURDOMAIN.TLD
 tslogs=/etc/teamspeak3-server_linux_amd64/logs
 tspath=/etc/teamspeak3-server_linux_amd64
+FILE=/tmp/teamspeak_daily_log.tmp
 tsuser=teamspeak
 email=yes
 
@@ -13,68 +14,145 @@ email=yes
 rm -f /tmp/teamspeak_daily_log*
 
 #collecting daily log
-cat $tslogs/ts3server_* | grep $(date -d "yesterday" '+%Y-%m-%d') >> /tmp/teamspeak_daily_log
+cat $tslogs/ts3server_*.log | grep $(date -d "yesterday" '+%Y-%m-%d') >> /tmp/teamspeak_daily_log
 
 ##preparing report
 echo -e "LogReport Teamspeak $(date -d "yesterday" '+%d.%m.%Y')\n" >> /tmp/teamspeak_daily_log.1
 echo -e "---------------------- Teamspeak -------------------------\n" >> /tmp/teamspeak_daily_log.1
+##server
 echo -e "-------------------- Server -----------------------\n" >> /tmp/teamspeak_daily_log.1
-#server
 echo -e "Status : $($tspath/ts3server_startscript.sh status )\n" >> /tmp/teamspeak_daily_log.1
+
 cat /tmp/teamspeak_daily_log | grep ServerMain >> /tmp/teamspeak_daily_log.server
 cat /tmp/teamspeak_daily_log | grep stopped >> /tmp/teamspeak_daily_log.server
-
+#sort log entries by date
 cat /tmp/teamspeak_daily_log.server | sort -M -k 2 >> /tmp/teamspeak_daily_log.tmp
-cat /tmp/teamspeak_daily_log.tmp >> /tmp/teamspeak_daily_log.1
-echo -e "--------------------- Error -----------------------\n" >> /tmp/teamspeak_daily_log.1
-#error
-cat /tmp/teamspeak_daily_log | grep ERROR >> /tmp/teamspeak_daily_log.1
-echo -e "------------------- Error End ---------------------\n" >> /tmp/teamspeak_daily_log.1
-echo -e "-------------------- Warning ----------------------\n" >> /tmp/teamspeak_daily_log.1
-#warning
-cat /tmp/teamspeak_daily_log | grep WARNING >> /tmp/teamspeak_daily_log.1
-echo -e "------------------ Warning End --------------------\n" >> /tmp/teamspeak_daily_log.1
-#accounting
-echo -e "------------------- Accounting --------------------\n" >> /tmp/teamspeak_daily_log.1
-cat /tmp/teamspeak_daily_log | grep Accounting >> /tmp/teamspeak_daily_log.1
-echo -e "----------------- Accounting End ------------------\n" >> /tmp/teamspeak_daily_log.1
 
+#paste file only when log file has data in it
+if [[ -s $FILE ]]
+	then
+		cat /tmp/teamspeak_daily_log.tmp >> /tmp/teamspeak_daily_log.1
+	else
+		rm /tmp/teamspeak_daily_log.tmp
+fi
+
+##error
+cat /tmp/teamspeak_daily_log | grep ERROR >> /tmp/teamspeak_daily_log.tmp
+#paste file only when log file has data in it
+if [[ -s $FILE ]]
+	then
+		echo -e "--------------------- Error -----------------------\n" >> /tmp/teamspeak_daily_log.1
+		cat /tmp/teamspeak_daily_log.tmp >> /tmp/teamspeak_daily_log.1
+		echo -e "------------------- Error End ---------------------\n" >> /tmp/teamspeak_daily_log.1
+	else
+fi
+rm /tmp/teamspeak_daily_log.tmp
+
+##warning
+cat /tmp/teamspeak_daily_log | grep WARNING >> /tmp/teamspeak_daily_log.tmp
+#paste file only when log file has data in it
+if [[ -s $FILE ]]
+	then
+		echo -e "-------------------- Warning ----------------------\n" >> /tmp/teamspeak_daily_log.1
+		cat /tmp/teamspeak_daily_log.tmp >> /tmp/teamspeak_daily_log.1
+		echo -e "------------------ Warning End --------------------\n" >> /tmp/teamspeak_daily_log.1
+	else
+fi
+rm /tmp/teamspeak_daily_log.tmp
+
+##accounting
+cat /tmp/teamspeak_daily_log | grep Accounting >> /tmp/teamspeak_daily_log.tmp
+#paste file only when log file has data in it
+if [[ -s $FILE ]]
+	then
+		echo -e "------------------- Accounting --------------------\n" >> /tmp/teamspeak_daily_log.1
+		cat /tmp/teamspeak_daily_log.tmp >> /tmp/teamspeak_daily_log.1
+		echo -e "----------------- Accounting End ------------------\n" >> /tmp/teamspeak_daily_log.1
+	else
+fi
+rm /tmp/teamspeak_daily_log.tmp
 echo -e "------------------ Server End ---------------------\n" >> /tmp/teamspeak_daily_log.1
-echo -e "------------------ Complaint ----------------------\n" >> /tmp/teamspeak_daily_log.1
-#complaint
-cat /tmp/teamspeak_daily_log | grep complaint* >> /tmp/teamspeak_daily_log.1
-echo -e "---------------- Complaint End --------------------\n" >> /tmp/teamspeak_daily_log.1
-echo -e "---------------------- Ban ------------------------\n" >> /tmp/teamspeak_daily_log.1
-#ban
+
+##complaint
+cat /tmp/teamspeak_daily_log | grep complaint* >> /tmp/teamspeak_daily_log.tmp
+#paste file only when log file has data in it
+if [[ -s $FILE ]]
+	then
+		echo -e "------------------ Complaint ----------------------\n" >> /tmp/teamspeak_daily_log.1
+		cat /tmp/teamspeak_daily_log.tmp >> /tmp/teamspeak_daily_log.1
+		echo -e "---------------- Complaint End --------------------\n" >> /tmp/teamspeak_daily_log.1
+	else
+fi
+rm /tmp/teamspeak_daily_log.tmp
+
+##ban
 cat /tmp/teamspeak_daily_log |grep "ban added" >> /tmp/teamspeak_daily_log.ban
 cat /tmp/teamspeak_daily_log |grep BanManager >> /tmp/teamspeak_daily_log.ban
+#sort log entries by date
+cat /tmp/teamspeak_daily_log.ban | sort -M -k 2 >> /tmp/teamspeak_daily_log.tmp
+#paste file only when log file has data in it
+if [[ -s $FILE ]]
+	then
+		echo -e "---------------------- Ban ------------------------\n" >> /tmp/teamspeak_daily_log.1
+		cat /tmp/teamspeak_daily_log.tmp >> /tmp/teamspeak_daily_log.1
+		echo -e "-------------------- Ban End ----------------------\n" >> /tmp/teamspeak_daily_log.1
+	else
+fi
+rm /tmp/teamspeak_daily_log.tmp
 
-cat /tmp/teamspeak_daily_log.ban | sort -M -k 2 >> /tmp/teamspeak_daily_log.tmp1
-cat /tmp/teamspeak_daily_log.tmp1 >> /tmp/teamspeak_daily_log.1
-echo -e "-------------------- Ban End ----------------------\n" >> /tmp/teamspeak_daily_log.1
-echo -e "---------------------- Kick -----------------------\n" >> /tmp/teamspeak_daily_log.1
+##kick
+cat /tmp/teamspeak_daily_log | grep "reason 'invokerid" >> /tmp/teamspeak_daily_log.tmp
+#paste file only when log file has data in it
+if [[ -s $FILE ]]
+	then
+		echo -e "------------------ Complaint ----------------------\n" >> /tmp/teamspeak_daily_log.1
+		cat /tmp/teamspeak_daily_log.tmp >> /tmp/teamspeak_daily_log.1
+		echo -e "---------------- Complaint End --------------------\n" >> /tmp/teamspeak_daily_log.1
+	else
+fi
+rm /tmp/teamspeak_daily_log.tmp
 
-cat /tmp/teamspeak_daily_log | grep "reason 'invokerid" >> /tmp/teamspeak_daily_log.1
-echo -e "-------------------- Kick End ---------------------\n" >> /tmp/teamspeak_daily_log.1
-echo -e "------------------- Permission --------------------\n" >> /tmp/teamspeak_daily_log.1
+##permission changed
+cat /tmp/teamspeak_daily_log | grep permission >> /tmp/teamspeak_daily_log.tmp
+#paste file only when log file has data in it
+if [[ -s $FILE ]]
+	then
+		echo -e "------------------- Permission --------------------\n" >> /tmp/teamspeak_daily_log.1
+		cat /tmp/teamspeak_daily_log.tmp >> /tmp/teamspeak_daily_log.1
+		echo -e "----------------- Permission End ------------------\n" >> /tmp/teamspeak_daily_log.1
+	else
+fi
+rm /tmp/teamspeak_daily_log.tmp
 
-cat /tmp/teamspeak_daily_log | grep permission >> /tmp/teamspeak_daily_log.1
-echo -e "----------------- Permission End ------------------\n" >> /tmp/teamspeak_daily_log.1
-echo -e "------------------ Group change -------------------\n" >> /tmp/teamspeak_daily_log.1
-echo -e "--- added ---\n"
-cat /tmp/teamspeak_daily_log | grep 'was added to servergroup' >> /tmp/teamspeak_daily_log.1
+##group changed
+cat /tmp/teamspeak_daily_log | grep 'was added to servergroup' >> /tmp/teamspeak_daily_log.tmp
+cat /tmp/teamspeak_daily_log | grep 'was removed from servergroup' >> /tmp/teamspeak_daily_log.tmp
+#paste file only when log file has data in it
+if [[ -s $FILE ]]
+	then
+		echo -e "------------------ Group change -------------------\n" >> /tmp/teamspeak_daily_log.1
+		echo -e "--- added ---\n" >> /tmp/teamspeak_daily_log.1
+		cat /tmp/teamspeak_daily_log.tmp | grep 'was added to servergroup' >> /tmp/teamspeak_daily_log.1
+		echo -e "--- removed ---\n" >> /tmp/teamspeak_daily_log.1
+		cat /tmp/teamspeak_daily_log.tmp | grep 'was removed from servergroup' >> /tmp/teamspeak_daily_log.1
+		echo -e "---------------- Group change End -----------------\n" >> /tmp/teamspeak_daily_log.1
+	else
+fi
+rm /tmp/teamspeak_daily_log.tmp
 
-echo -e "--- removed ---\n"
-cat /tmp/teamspeak_daily_log | grep 'was removed from servergroup' >> /tmp/teamspeak_daily_log.1
 
-echo -e "---------------- Group change End -----------------\n" >> /tmp/teamspeak_daily_log.1
-echo -e "--------------------- Channel ---------------------\n" >> /tmp/teamspeak_daily_log.1
-
-#|VirtualServerBase|1  |channel 'Test04'(id:281) created by sample log entrie
+##channel created
 cat /tmp/teamspeak_daily_log | grep channel >> /tmp/teamspeak_daily_log.channel
-#remove the server query permission skipchannel log lines
-cat /tmp/teamspeak_daily_log.channel | grep VirtualServerBase >> /tmp/teamspeak_daily_log.1
-echo -e "------------------- Channel End -------------------\n" >> /tmp/teamspeak_daily_log.1
+cat /tmp/teamspeak_daily_log.channel | grep VirtualServerBase >> /tmp/teamspeak_daily_log.tmp
+#paste file only when log file has data in it
+if [[ -s $FILE ]]
+	then
+		echo -e "--------------------- Channel ---------------------\n" >> /tmp/teamspeak_daily_log.1
+		cat /tmp/teamspeak_daily_log.tmp >> /tmp/teamspeak_daily_log.1
+		echo -e "------------------- Channel End -------------------\n" >> /tmp/teamspeak_daily_log.1
+	else
+fi
+rm /tmp/teamspeak_daily_log.tmp
 echo -e "-------------------- Teamspeak End -----------------------" >> /tmp/teamspeak_daily_log.1
 
 ##sorting log entries and pushing to logfile
