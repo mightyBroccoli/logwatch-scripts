@@ -3,8 +3,6 @@
 #variables
 mailaddr_to=YOURMAIL@DOMAIN.TLD
 mailaddr_from=MAILFROM@YOURDOMAIN.TLD
-mailaddr_to=nico@magicbroccoli.de
-mailaddr_from=teamspeak@magicbroccoli.de
 tslogs=/etc/teamspeak3-server_linux_amd64/logs
 tspath=/etc/teamspeak3-server_linux_amd64
 FILE=/tmp/teamspeak_daily_log.tmp
