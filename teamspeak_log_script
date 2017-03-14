@@ -99,9 +99,9 @@ cat /tmp/teamspeak_daily_log | grep "reason 'invokerid" >> /tmp/teamspeak_daily_
 #paste file only when log file has data in it
 if [[ -s $FILE ]]
 	then
-		echo -e "------------------ Complaint ----------------------\n" >> /tmp/teamspeak_daily_log.1
+		echo -e "-------------------- Kick ------------------------\n" >> /tmp/teamspeak_daily_log.1
 		cat /tmp/teamspeak_daily_log.tmp >> /tmp/teamspeak_daily_log.1
-		echo -e "---------------- Complaint End --------------------\n" >> /tmp/teamspeak_daily_log.1
+		echo -e "------------------ Kick End ----------------------\n" >> /tmp/teamspeak_daily_log.1
 fi
 rm /tmp/teamspeak_daily_log.tmp
 
