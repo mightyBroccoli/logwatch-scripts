@@ -6,6 +6,7 @@ mailaddr_from=MAILFROM@YOURDOMAIN.TLD
 tslogs=/etc/teamspeak3-server_linux_amd64/logs
 tspath=/etc/teamspeak3-server_linux_amd64
 FILE=/tmp/teamspeak_daily_log.tmp
+service_script=ts3server.service
 tsuser=teamspeak
 email=yes
 
@@ -21,7 +22,7 @@ echo -e "LogReport Teamspeak $(date -d "yesterday" '+%d.%m.%Y')\n" >> /tmp/teams
 echo -e "---------------------- Teamspeak -------------------------\n" >> /tmp/teamspeak_daily_log.1
 ##server
 echo -e "-------------------- Server -----------------------\n" >> /tmp/teamspeak_daily_log.1
-echo -e "Status : $($tspath/ts3server_startscript.sh status )\n" >> /tmp/teamspeak_daily_log.1
+echo -e "Status : $(systemctl status $service_script)\n" >> /tmp/teamspeak_daily_log.1
 
 cat /tmp/teamspeak_daily_log | grep ServerMain >> /tmp/teamspeak_daily_log.server
 cat /tmp/teamspeak_daily_log | grep stopped >> /tmp/teamspeak_daily_log.server
