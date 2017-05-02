@@ -1,21 +1,28 @@
 #!/bin/bash
 
-#variables
+#user specific variables
 mailaddr_to=YOURMAIL@DOMAIN.TLD
 mailaddr_from=MAILFROM@YOURDOMAIN.TLD
+email=yes
+
+#system specific variables
 tslogs=/etc/teamspeak3-server_linux_amd64/logs
+logfiles=/tmp/teamspeak_daily_log_files
 tspath=/etc/teamspeak3-server_linux_amd64
 FILE=/tmp/teamspeak_daily_log.tmp
 service_script=ts3server.service
 tsuser=teamspeak
-email=yes
+
+#todo
+# optimization use lsof with teamspeak pid to find used log files
 
 
 #cleaning work environment
 rm -f /tmp/teamspeak_daily_log*
 
-#collecting daily log
-cat $tslogs/ts3server_*.log | grep $(date -d "yesterday" '+%Y-%m-%d') >> /tmp/teamspeak_daily_log
+# picking the logfiles from the running teamspeak server for the selection
+ls -t $tslogs | head -n2 | sed -e 's/\s\+/\n/g' | sort >> /tmp/teamspeak_daily_log_files
+cat $logfiles | grep $(date -d "yesterday" '+%Y-%m-%d') >> /tmp/teamspeak_daily_log
 
 ##preparing report
 echo -e "LogReport Teamspeak $(date -d "yesterday" '+%d.%m.%Y')\n" >> /tmp/teamspeak_daily_log.1
