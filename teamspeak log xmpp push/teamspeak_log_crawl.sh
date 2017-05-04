@@ -1,8 +1,6 @@
 #!/bin/sh
 
 # this script tails the latest logfiles
-# */15 * * * * /PATH/teamspeak_log_xmpp-push.sh
-
 
 ## system variables
 tslogs=/etc/teamspeak3-server_linux_amd64/logs
@@ -23,4 +21,4 @@ rm $tmp_directory/{logfiles,selection_today}.txt >/dev/null 2>&1
 ## log selection
 #picking the logfiles from the running teamspeak server for the selection
 ls -t $tslogs | head -n2 | sort > $logfiles
-tail -f $tslogs/$(sed -n '1p' $logfiles) -f $tslogs/$(sed -n '2p' $logfiles) >> $log_selection_today
+tail -F -n1 $tslogs/$(sed -n '1p' $logfiles) >> $log_selection_today & tail -F -n1 $tslogs/$(sed -n '2p' $logfiles) >> $log_selection_today
