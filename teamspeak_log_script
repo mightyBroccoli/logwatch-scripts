@@ -21,8 +21,9 @@ tsuser=teamspeak
 rm -f /tmp/teamspeak_daily_log*
 
 # picking the logfiles from the running teamspeak server for the selection
-ls -t $tslogs | head -n2 | sed -e 's/\s\+/\n/g' | sort >> /tmp/teamspeak_daily_log_files
-cat $logfiles | grep $(date -d "yesterday" '+%Y-%m-%d') >> /tmp/teamspeak_daily_log
+ls -t $tslogs | head -n2 | sort >> /tmp/teamspeak_daily_log_files
+cat $tslogs/$(sed -n '1p' $logfiles) | grep $(date -d "yesterday" '+%Y-%m-%d') >> /tmp/teamspeak_daily_log
+cat $tslogs/$(sed -n '2p' $logfiles) | grep $(date -d "yesterday" '+%Y-%m-%d') >> /tmp/teamspeak_daily_log
 
 ##preparing report
 echo -e "LogReport Teamspeak $(date -d "yesterday" '+%d.%m.%Y')\n" >> /tmp/teamspeak_daily_log.1
