@@ -55,7 +55,12 @@ clearcomp()
 rm $tmp_directory/{working,composition1,composition2,server,groupchange,complaint,ban,kick,channel}.txt >/dev/null 2>&1
 
 # move the current logfile to the working file
-mv $log_selection_today $working_file
+if [ -s $log_selection_today ]; then
+	cp $log_selection_today $working_file
+	truncate -s 0 $log_selection_today
+else
+	exit
+fi
 
 ## server ##
 cat $working_file | grep -E 'ServerMain|stopped|Accounting|Warning|ERROR' >> $composition1
