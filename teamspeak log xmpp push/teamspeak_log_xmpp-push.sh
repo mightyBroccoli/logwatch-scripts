@@ -132,8 +132,11 @@ if [[ -s $composition1 ]]; then
 fi
 clearcomp
 
-## Ban ##
-cat $working_file | grep -E 'channel|VirtualServerBase' > $composition1
+## Channel ##
+cat $working_file | grep  channel > $composition1
+cat $composition1 | grep VirtualServerBase > $composition2
+cat $composition2 > $composition1
+
 echo -e "---- Channel ----\n" > $composition2
 cat $composition1 | sort -M -k 2 >> $composition2
 echo -e "---- Channel End ----\n" >> $composition2
