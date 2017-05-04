@@ -17,6 +17,9 @@ if [ ! -d "$tmp_directory" ]; then
 	mkdir /tmp/teamspeak/
 fi
 
+rm $tmp_directory/{logfiles,selection_today}.txt >/dev/null 2>&1
+
+
 ## log selection
 #picking the logfiles from the running teamspeak server for the selection
 ls -t $tslogs | head -n2 | sort > $logfiles
