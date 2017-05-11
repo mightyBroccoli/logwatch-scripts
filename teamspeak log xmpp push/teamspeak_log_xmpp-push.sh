@@ -7,21 +7,22 @@
 
 
 ## user variables
-xmpp_sender=FROM@SERVER.TLD
-xmpp_sender_pw=PASSWORD
+xmpp_username=FROM					# just the username not the complete jid
+xmpp_password=PASSWORD
 xmpp_server=SERVER.TLD
-xmpp_reciever=TO@ANOTHERSERVER.TLD
-ressource=RANDOMSHIT
+xmpp_recipient=TO@ANOTHERSERVER.TLD	# the complete jid
+ressource=RANDOMSHIT				# some random string to indetify
 tslogs=/etc/teamspeak3-server_linux_amd64/logs
 
 # selection variables
 tmp_directory=/tmp/teamspeak
 logfiles=$tmp_directory/logfiles.txt
-log_selection_today=$tmp_directory/selection_today.txt
-
+log_selection_today_unsorted=$tmp_directory/selection_today_unsorted.txt
+log_selection_today=$tmp_directory/selection_today_sorted.txt
+log_removed_old=$tmp_directory/selection_removed_old.txt
+log_history=$tmp_directory/today_history.txt
 
 # comppositon variables
-working_file=$tmp_directory/working.txt
 composition1=$tmp_directory/composition1.txt
 composition2=$tmp_directory/composition2.txt
 server=$tmp_directory/server.txt
@@ -34,13 +35,13 @@ channel=$tmp_directory/channel.txt
 
 
 ## todo
-
+# code cleaning
 
 ## functions
 pushstuff()
 {
 	# xmpp push function with variable message
-	sendxmpp -u $xmpp_sender -p $xmpp_sender_pw -j $xmpp_server --tls --resource $ressource $xmpp_reciever --message $1
+	sendxmpp -u $xmpp_username -p $xmpp_password -j $xmpp_server --tls --resource $ressource $xmpp_recipient --message $1
 }
 
 clearcomp()
@@ -49,21 +50,45 @@ clearcomp()
 	rm $composition1 $composition2 >/dev/null 2>&1
 }
 
-
 ## preparations
-#deleting possible old content
-rm $tmp_directory/{working,composition1,composition2,server,groupchange,complaint,ban,kick,channel}.txt >/dev/null 2>&1
-
-# move the current logfile to the working file
-if [ -s $log_selection_today ]; then
-	cp $log_selection_today $working_file
-	truncate -s 0 $log_selection_today
-else
-	exit
+#check if tmp directory is present
+if [ ! -d "$tmp_directory" ]; then
+	mkdir /tmp/teamspeak/
 fi
 
+#deleting possible old content
+rm $tmp_directory/{logfiles,selection_today_unsorted,selection_today_sorted,selection_removed_old,composition1,composition2,server,complain,ban,kick,groupchange,channel}.txt >/dev/null 2>&1
+
+## log file selection
+#get the currently used logfiles
+ls -t $tslogs | head -n2 | sort > $logfiles
+
+cat $tslogs/$(sed -n '1p' $logfiles) | grep $(date -u '+%Y-%m-%d') >> $log_selection_today_unsorted
+cat $tslogs/$(sed -n '2p' $logfiles) | grep $(date -u '+%Y-%m-%d') >> $log_selection_today_unsorted
+
+# sort logentries
+sort $log_selection_today_unsorted > $log_selection_today
+
+#if  $log_history file exists append if not create it
+if [[ -s  $log_history ]]; then
+	#it does exist
+	cat $log_history $log_selection_today > $composition1
+	sort $log_history | uniq > $log_history
+	clearcomp
+else
+	#it doesn't exist
+	cat $log_selection_today > $log_history
+fi
+
+#comparing the selection to the history file and printing just the new lines
+grep -v -F -x -f $log_history $log_selection_today  > $log_removed_old
+
+
+#################################################
+
+
 ## server ##
-cat $working_file | grep -E 'ServerMain|stopped|Accounting|Warning|ERROR' >> $composition1
+cat $log_removed_old | grep -E 'ServerMain|stopped|Accounting|Warning|ERROR' >> $composition1
 echo -e "---- Server ----\n" >> $composition2
 cat $composition1 | sort -M -k 2 >> $composition2
 echo -e "---- Server End ----\n" >> $composition2
@@ -76,7 +101,7 @@ fi
 clearcomp
 
 ## Complaint ##
-cat $working_file | grep complaint* >> $composition1
+cat $log_removed_old | grep complaint* >> $composition1
 
 echo -e "---- Complaint ----\n" >> $composition2
 cat $composition1 >> $composition2
@@ -90,7 +115,7 @@ fi
 clearcomp
 
 ## Ban ##
-cat $working_file | grep -E 'ban added|BanManager' >> $composition1
+cat $log_removed_old | grep -E 'ban added|BanManager' >> $composition1
 echo -e "---- Ban ----\n" >> $composition2
 cat $composition1 | sort -M -k 2 >> $composition2
 echo -e "---- Ban End ----\n" >> $composition2
@@ -102,7 +127,7 @@ fi
 clearcomp
 
 ## Kick ## 
-cat $working_file | grep "reason 'invokerid" >> $composition1
+cat $log_removed_old | grep "reason 'invokerid" >> $composition1
 
 echo -e "---- Kick ----\n" >> $composition2
 cat $composition1 >> $composition2
@@ -118,10 +143,10 @@ clearcomp
 ## Group change ##
 echo -e "---- Group change ----\n" > $composition2
 echo -e "--- added ---\n" >> $composition2
-cat $working_file | grep "was added to servergroup" > $composition1
+cat $log_removed_old | grep "was added to servergroup" > $composition1
 cat $composition1 >> $composition2
 echo -e "--- removed ---\n" >> $composition2
-cat $working_file | grep "was removed from servergroup" > $composition1
+cat $log_removed_old | grep "was removed from servergroup" > $composition1
 cat $composition1 >> $composition2
 echo -e "---- Group change End ----\n" >> $composition2
 
@@ -133,7 +158,7 @@ fi
 clearcomp
 
 ## Channel ##
-cat $working_file | grep  channel > $composition1
+cat $log_removed_old | grep  channel > $composition1
 cat $composition1 | grep VirtualServerBase > $composition2
 cat $composition2 > $composition1
 
