@@ -65,22 +65,22 @@ clearcomp()
 }
 
 
-## firstrun setup
-#first run setup to get the date file accurate
-if [ "$1" = "-setup" ]; then
-	date -u '+%Y-%m-%d' > $tmp_directory/date.txt
-fi
-
 ## preparations
-#is the history relevant
-if [ ! "$currentday" == $(cat $tmp_directory/date.txt ]; then
-	#they are not the same
-	rm $log_history
-fi
-
-#check if tmp directory is present
+#check if tmp directory is present if not create it
 if [ ! -d "$tmp_directory" ]; then
 	mkdir /tmp/teamspeak/
+fi
+
+#is the history relevant
+#check if date file is present
+if [ ! -f "$tmp_directory/date.txt" ]; then
+	date -u '+%Y-%m-%d' > $tmp_directory/date.txt
+fi
+if [ ! "$currentday" == $(cat $tmp_directory/date.txt) ]; then
+	#they are not the same remove the old history
+	rm $log_history
+	#set the new date inside the date file
+	date -u '+%Y-%m-%d' > $tmp_directory/date.txt
 fi
 
 #deleting possible old content
@@ -90,6 +90,7 @@ rm $tmp_directory/{logfiles,selection_today_unsorted,selection_today_sorted,sele
 #get the currently used logfiles
 ls -t $tslogs | head -n2 | sort > $logfiles
 
+#from the $logfiles get everything from today
 cat $tslogs/$(sed -n '1p' $logfiles) | grep $(date -u '+%Y-%m-%d') >> $log_selection_today_unsorted
 cat $tslogs/$(sed -n '2p' $logfiles) | grep $(date -u '+%Y-%m-%d') >> $log_selection_today_unsorted
 
@@ -97,7 +98,7 @@ cat $tslogs/$(sed -n '2p' $logfiles) | grep $(date -u '+%Y-%m-%d') >> $log_selec
 sort $log_selection_today_unsorted > $log_selection_today
 
 #if  $log_history file exists append if not create it
-if [[ -s  $log_history ]]; then
+if [ -s  $log_history ]; then
 	#it does exist
 	cat $log_history $log_selection_today > $composition1
 	sort $log_history | uniq > $log_history
@@ -123,7 +124,7 @@ cat $composition1 | sort -M -k 2 >> $composition2
 echo -e "---- Server End ----\n" >> $composition2
 
 #paste the shit into the file and remove the tmp files afterwords
-if [[ -s $composition1 ]]; then
+if [ -s $composition1 ]; then
 	cat $composition2 > $server
 	pushstuff $server
 fi
@@ -137,7 +138,7 @@ cat $composition1 >> $composition2
 echo -e "---- Complaint End ----\n" >> $composition2
 
 #paste the shit into the file and remove the tmp files afterwords
-if [[ -s $composition1 ]]; then
+if [ -s $composition1 ]; then
 	cat $composition2 > $complaint
 	pushstuff $complaint
 fi
@@ -150,7 +151,7 @@ cat $composition1 | sort -M -k 2 >> $composition2
 echo -e "---- Ban End ----\n" >> $composition2
 
 #paste the shit into the file and remove the tmp files afterwords
-if [[ -s $composition1 ]]; then
+if [ -s $composition1 ]; then
 	cat $composition2 > $ban
 fi
 clearcomp
@@ -163,7 +164,7 @@ cat $composition1 >> $composition2
 echo -e "---- Kick End ----\n" >> $composition2
 
 #paste the shit into the file and remove the tmp files afterwords
-if [[ -s $composition1 ]]; then
+if [ -s $composition1 ]; then
 	cat $composition2 > $kick
 	pushstuff $kick
 fi
@@ -180,7 +181,7 @@ cat $composition1 >> $composition2
 echo -e "---- Group change End ----\n" >> $composition2
 
 #paste the shit into the file
-if [[ -s $composition1 ]]; then
+if [ -s $composition1 ]; then
 	cat $composition2 >> $groupchange
 	pushstuff $groupchange
 fi
@@ -196,7 +197,7 @@ cat $composition1 | sort -M -k 2 >> $composition2
 echo -e "---- Channel End ----\n" >> $composition2
 
 #paste the shit into the file and remove the tmp files afterwords
-if [[ -s $composition1 ]]; then
+if [ -s $composition1 ]; then
 	cat $composition2 > $channel
 	pushstuff $channel
 fi

@@ -26,7 +26,6 @@ script that iterates through the latest teamspeak loglines and captures the impo
 * bashutils
 
 ### install
-First run `/PATH/teamspeak_xmpp_push.sh -setup` to setup up 
 run this script via cron/anacron as often as you like the script will only send new loglines and not the previous ones.
 
 ## proftpd logwatch script
