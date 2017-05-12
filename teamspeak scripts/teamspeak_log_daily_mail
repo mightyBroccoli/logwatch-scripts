@@ -1,173 +1,213 @@
 #!/bin/bash
+#
+## Version 1.0.1
+#
+#
+## Dependencies
+#
+# shell access
+# teamspeak 3 server
+# anacron / cron
+# bash > 4.2
+# bashutils
+#
+#
+## Usage
+# replace mailaddr_to/_from and possibly the tslog path
+# place inside /etc/cron.daily to run this script on a daily basis
 
-#user specific variables
+
+#user  variables
 mailaddr_to=YOURMAIL@DOMAIN.TLD
 mailaddr_from=MAILFROM@YOURDOMAIN.TLD
 email=yes
 
 #system specific variables
 tslogs=/etc/teamspeak3-server_linux_amd64/logs
-logfiles=/tmp/teamspeak_daily_log_files
-tspath=/etc/teamspeak3-server_linux_amd64
-FILE=/tmp/teamspeak_daily_log.tmp
 service_script=ts3server.service
 tsuser=teamspeak
 
-#todo
-# optimization use lsof with teamspeak pid to find used log files
+#log files
+tmp_directory=/tmp/teamspeak/daily_mail
+logfiles=$tmp_directory/teamspeak_daily_log_files
+daily_log=$tmp_directory/teamspeak_daily_log
+
+# comppositon variables
+composition1=$tmp_directory/composition1.txt
+composition2=$tmp_directory/composition2.txt
+message_body=$tmp_directory/teamspeak_log_messagebody.txt
+mailcomposition=$tmp_directory/teamspeak_mail_composition.txt
+
+## todo
+#optimization use lsof with teamspeak pid to find used log files
+
+
+## functions
+clearcomp()
+{
+	# remove the composition files
+	rm $composition1 $composition2 >/dev/null 2>&1
+}
 
 
 #cleaning work environment
-rm -f /tmp/teamspeak_daily_log*
+rm -f $tmp_directory/*
 
 # picking the logfiles from the running teamspeak server for the selection
-ls -t $tslogs | head -n2 | sort >> /tmp/teamspeak_daily_log_files
-cat $tslogs/$(sed -n '1p' $logfiles) | grep $(date -d "yesterday" '+%Y-%m-%d') >> /tmp/teamspeak_daily_log
-cat $tslogs/$(sed -n '2p' $logfiles) | grep $(date -d "yesterday" '+%Y-%m-%d') >> /tmp/teamspeak_daily_log
+ls -t $tslogs | head -n2 | sort >> $logfiles
+grep "$(date -d "yesterday" '+%Y-%m-%d')" "$tslogs/$(sed -n '1p' $logfiles)" >> $daily_log
+grep "$(date -d "yesterday" '+%Y-%m-%d')" "$tslogs/$(sed -n '2p' $logfiles)" >> $daily_log
 
 ##preparing report
-echo -e "LogReport Teamspeak $(date -d "yesterday" '+%d.%m.%Y')\n" >> /tmp/teamspeak_daily_log.1
-echo -e "---------------------- Teamspeak -------------------------\n" >> /tmp/teamspeak_daily_log.1
-##server
-echo -e "-------------------- Server -----------------------\n" >> /tmp/teamspeak_daily_log.1
-echo -e "Status : $(systemctl status $service_script)\n" >> /tmp/teamspeak_daily_log.1
+#report header with systemd script
+{	echo -e "LogReport Teamspeak $(date -d "yesterday" '+%d.%m.%Y')\n"
+	echo -e "---------------------- Teamspeak -------------------------\n"
+	#server
+	echo -e "-------------------- Server -----------------------\n"
+	echo -e "Status : $(systemctl status $service_script)\n"
+} >> $message_body
 
-cat /tmp/teamspeak_daily_log | grep ServerMain >> /tmp/teamspeak_daily_log.server
-cat /tmp/teamspeak_daily_log | grep stopped >> /tmp/teamspeak_daily_log.server
-#sort log entries by date
-cat /tmp/teamspeak_daily_log.server | sort -M -k 2 >> /tmp/teamspeak_daily_log.tmp
+grep -E "ServerMain|stopped" $daily_log | sort >> $composition1
 
-#paste file only when log file has data in it
-if [[ -s $FILE ]]
-	then
-		cat /tmp/teamspeak_daily_log.tmp >> /tmp/teamspeak_daily_log.1
+#paste file only if not empty
+if [ -s $composition1 ]; then
+	cat $composition1 >> $message_body
+
 fi
-rm /tmp/teamspeak_daily_log.tmp
+clearcomp
 
 ##error
-cat /tmp/teamspeak_daily_log | grep ERROR >> /tmp/teamspeak_daily_log.tmp
+grep "ERROR" $daily_log >> $composition1
 #paste file only when log file has data in it
-if [[ -s $FILE ]]
-	then
-		echo -e "--------------------- Error -----------------------\n" >> /tmp/teamspeak_daily_log.1
-		cat /tmp/teamspeak_daily_log.tmp >> /tmp/teamspeak_daily_log.1
-		echo -e "------------------- Error End ---------------------\n" >> /tmp/teamspeak_daily_log.1
+if [ -s $composition1 ]; then
+	{	echo -e "--------------------- Error -----------------------\n"
+		cat $composition1
+		echo -e "------------------- Error End ---------------------\n"
+	} >> $message_body
+
 fi
-rm /tmp/teamspeak_daily_log.tmp
+clearcomp
 
 ##warning
-cat /tmp/teamspeak_daily_log | grep WARNING >> /tmp/teamspeak_daily_log.tmp
+grep "WARNING" $daily_log >> $composition1
 #paste file only when log file has data in it
-if [[ -s $FILE ]]
-	then
-		echo -e "-------------------- Warning ----------------------\n" >> /tmp/teamspeak_daily_log.1
-		cat /tmp/teamspeak_daily_log.tmp >> /tmp/teamspeak_daily_log.1
-		echo -e "------------------ Warning End --------------------\n" >> /tmp/teamspeak_daily_log.1
+if [ -s $composition1 ]; then
+	{	echo -e "-------------------- Warning ----------------------\n"
+	 	cat $composition1
+	 	echo -e "------------------ Warning End --------------------\n"
+	} >> $message_body
 fi
-rm /tmp/teamspeak_daily_log.tmp
+clearcomp
 
 ##accounting
-cat /tmp/teamspeak_daily_log | grep Accounting >> /tmp/teamspeak_daily_log.tmp
+grep "Accounting" $daily_log >> $composition1
 #paste file only when log file has data in it
-if [[ -s $FILE ]]
-	then
-		echo -e "------------------- Accounting --------------------\n" >> /tmp/teamspeak_daily_log.1
-		cat /tmp/teamspeak_daily_log.tmp >> /tmp/teamspeak_daily_log.1
-		echo -e "----------------- Accounting End ------------------\n" >> /tmp/teamspeak_daily_log.1
+if [ -s $composition1 ]; then
+	{	echo -e "------------------- Accounting --------------------\n"
+	 	cat $composition1
+	 	echo -e "----------------- Accounting End ------------------\n"
+	} >> $message_body
 fi
-rm /tmp/teamspeak_daily_log.tmp
-echo -e "------------------ Server End ---------------------\n" >> /tmp/teamspeak_daily_log.1
+clearcomp
+echo -e "------------------ Server End ---------------------\n" >> $message_body
 
 ##complaint
-cat /tmp/teamspeak_daily_log | grep complaint* >> /tmp/teamspeak_daily_log.tmp
+grep "^complaint" $daily_log >> $composition1
 #paste file only when log file has data in it
-if [[ -s $FILE ]]
-	then
-		echo -e "------------------ Complaint ----------------------\n" >> /tmp/teamspeak_daily_log.1
-		cat /tmp/teamspeak_daily_log.tmp >> /tmp/teamspeak_daily_log.1
-		echo -e "---------------- Complaint End --------------------\n" >> /tmp/teamspeak_daily_log.1
+if [ -s $composition1 ]; then
+	{	echo -e "------------------ Complaint ----------------------\n"
+		cat $composition1
+		echo -e "---------------- Complaint End --------------------\n"
+	} >> $message_body
 fi
-rm /tmp/teamspeak_daily_log.tmp
+clearcomp
 
 ##ban
-cat /tmp/teamspeak_daily_log |grep "ban added" >> /tmp/teamspeak_daily_log.ban
-cat /tmp/teamspeak_daily_log |grep BanManager >> /tmp/teamspeak_daily_log.ban
-#sort log entries by date
-cat /tmp/teamspeak_daily_log.ban | sort -M -k 2 >> /tmp/teamspeak_daily_log.tmp
+#grep and sort logentries
+grep -E "ban added|BanManager" $daily_log | sort >> $composition1
+
 #paste file only when log file has data in it
-if [[ -s $FILE ]]
-	then
-		echo -e "---------------------- Ban ------------------------\n" >> /tmp/teamspeak_daily_log.1
-		cat /tmp/teamspeak_daily_log.tmp >> /tmp/teamspeak_daily_log.1
-		echo -e "-------------------- Ban End ----------------------\n" >> /tmp/teamspeak_daily_log.1
+if [ -s $composition1 ]; then
+	{	echo -e "---------------------- Ban ------------------------\n"
+	 	cat $composition1
+	 	echo -e "-------------------- Ban End ----------------------\n"
+	} >> $message_body
+
 fi
-rm /tmp/teamspeak_daily_log.tmp
+clearcomp
 
 ##kick
-cat /tmp/teamspeak_daily_log | grep "reason 'invokerid" >> /tmp/teamspeak_daily_log.tmp
+grep "reason 'invokerid" $daily_log >> $composition1
 #paste file only when log file has data in it
-if [[ -s $FILE ]]
-	then
-		echo -e "-------------------- Kick ------------------------\n" >> /tmp/teamspeak_daily_log.1
-		cat /tmp/teamspeak_daily_log.tmp >> /tmp/teamspeak_daily_log.1
-		echo -e "------------------ Kick End ----------------------\n" >> /tmp/teamspeak_daily_log.1
+if [ -s $composition1 ]; then
+	{	echo -e "-------------------- Kick ------------------------\n"
+		cat $composition1
+		echo -e "------------------ Kick End ----------------------\n"
+	} >> $message_body
+
 fi
-rm /tmp/teamspeak_daily_log.tmp
+clearcomp
 
 ##permission changed
-cat /tmp/teamspeak_daily_log | grep permission >> /tmp/teamspeak_daily_log.tmp
+grep "permission" $daily_log >> $composition1
 #paste file only when log file has data in it
-if [[ -s $FILE ]]
-	then
-		echo -e "------------------- Permission --------------------\n" >> /tmp/teamspeak_daily_log.1
-		cat /tmp/teamspeak_daily_log.tmp >> /tmp/teamspeak_daily_log.1
-		echo -e "----------------- Permission End ------------------\n" >> /tmp/teamspeak_daily_log.1
+if [ -s $composition1 ]; then
+	{	echo -e "------------------- Permission --------------------\n"
+	 	cat $composition1
+	 	echo -e "----------------- Permission End ------------------\n"
+	} >> $message_body
+
 fi
-rm /tmp/teamspeak_daily_log.tmp
+clearcomp
 
 ##group changed
-cat /tmp/teamspeak_daily_log | grep 'was added to servergroup' >> /tmp/teamspeak_daily_log.tmp
-cat /tmp/teamspeak_daily_log | grep 'was removed from servergroup' >> /tmp/teamspeak_daily_log.tmp
+grep 'was added to servergroup' $daily_log >>  $composition1
+grep 'was removed from servergroup' $daily_log >>  $composition1
 #paste file only when log file has data in it
-if [[ -s $FILE ]]
-	then
-		echo -e "------------------ Group change -------------------\n" >> /tmp/teamspeak_daily_log.1
-		echo -e "--- added ---\n" >> /tmp/teamspeak_daily_log.1
-		cat /tmp/teamspeak_daily_log.tmp | grep 'was added to servergroup' >> /tmp/teamspeak_daily_log.1
-		echo -e "--- removed ---\n" >> /tmp/teamspeak_daily_log.1
-		cat /tmp/teamspeak_daily_log.tmp | grep 'was removed from servergroup' >> /tmp/teamspeak_daily_log.1
-		echo -e "---------------- Group change End -----------------\n" >> /tmp/teamspeak_daily_log.1
+if [ -s $composition1 ]; then
+	echo -e "------------------ Group change -------------------\n" >> $message_body
+	grep 'was added to servergroup' $composition1 > $composition2
+	if [ -s $composition2 ]; then
+		echo -e "--- added ---\n" >> $composition2
+		cat $composition2 >> $message_body
+	fi
+	grep 'was removed from servergroup' $composition1 > $composition2
+	if [ -s $composition2 ]; then
+		echo -e "--- removed ---\n" >> $composition2
+		cat $composition2 >> $message_body
+	fi
+	echo -e "---------------- Group change End -----------------\n" >> $message_body
 fi
-rm /tmp/teamspeak_daily_log.tmp
-
+clearcomp
 
 ##channel created
-cat /tmp/teamspeak_daily_log | grep channel >> /tmp/teamspeak_daily_log.channel
-cat /tmp/teamspeak_daily_log.channel | grep VirtualServerBase >> /tmp/teamspeak_daily_log.tmp
+grep "channel" $daily_log>> $composition1
+grep "VirtualServerBase" $composition1>> $composition2
 #paste file only when log file has data in it
-if [[ -s $FILE ]]
-	then
-		echo -e "--------------------- Channel ---------------------\n" >> /tmp/teamspeak_daily_log.1
-		cat /tmp/teamspeak_daily_log.tmp >> /tmp/teamspeak_daily_log.1
-		echo -e "------------------- Channel End -------------------\n" >> /tmp/teamspeak_daily_log.1
+if [ -s $composition2 ]; then
+	{	echo -e "--------------------- Channel ---------------------\n"
+	 	cat $composition2
+	 	echo -e "------------------- Channel End -------------------\n"
+	} >> $message_body
 fi
-rm /tmp/teamspeak_daily_log.tmp
-echo -e "-------------------- Teamspeak End -----------------------" >> /tmp/teamspeak_daily_log.1
+echo -e "-------------------- Teamspeak End -----------------------" >> $message_body
+clearcomp
 
 ##sorting log entries and pushing to logfile
 #2016-04-12 10:33:52.637083 sample timestamp
-cat /tmp/teamspeak_daily_log.1 >> /var/log/teamspeak/teamspeak_report.log
+cat $message_body >> /var/log/teamspeak/teamspeak_report.log
 
 #mail daily reports
 if [ $email == yes ]; then
-		#file is not empty
-		echo -e "To: $mailaddr_to" > /tmp/teamspeak_daily_log.report
-		echo -e "From: $mailaddr_from" >> /tmp/teamspeak_daily_log.report
-		echo -e "Subject: LogReport Teamspeak $(date -d "yesterday" '+%d.%m.%Y')" >> /tmp/teamspeak_daily_log.report
-		echo "" >> /tmp/teamspeak_daily_log.report
-		cat /tmp/teamspeak_daily_log.1 >> /tmp/teamspeak_daily_log.report
-		su $tsuser -s /bin/sh -c 'cat /tmp/teamspeak_daily_log.report | /usr/sbin/sendmail -t'
+	#file is not empty
+	{	echo -e "To: $mailaddr_to"
+	 	echo -e "From: $mailaddr_from"
+	 	echo -e "Subject: LogReport Teamspeak $(date -d "yesterday" '+%d.%m.%Y')"
+	 	echo ""
+	 	cat $message_body
+	} >> $mailcomposition
+	su $tsuser -s /bin/sh -c "cat $mailcomposition | /usr/sbin/sendmail -t"
 fi
 
 #removing tmp
-rm -f /tmp/teamspeak_daily_log*
+rm -f $tmp_directory/*
