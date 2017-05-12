@@ -33,11 +33,11 @@ log_selection_today_unsorted=$tmp_directory/selection_today_unsorted.txt
 log_selection_today=$tmp_directory/selection_today_sorted.txt
 log_removed_old=$tmp_directory/selection_removed_old.txt
 log_history=$tmp_directory/today_history.txt
+currentday=$(date -u '+%Y-%m-%d')
 
 # comppositon variables
 composition1=$tmp_directory/composition1.txt
 composition2=$tmp_directory/composition2.txt
-currentday=$(date -u '+%Y-%m-%d')
 server=$tmp_directory/server.txt
 complaint=$tmp_directory/complaint.txt
 ban=$tmp_directory/ban.txt
@@ -76,7 +76,7 @@ fi
 if [ ! -f "$tmp_directory/date.txt" ]; then
 	date -u '+%Y-%m-%d' > $tmp_directory/date.txt
 fi
-if [ ! "$currentday" == $(cat $tmp_directory/date.txt) ]; then
+if [ ! "$currentday" = $(cat $tmp_directory/date.txt) ]; then
 	#they are not the same remove the old history
 	rm $log_history
 	#set the new date inside the date file
@@ -84,14 +84,14 @@ if [ ! "$currentday" == $(cat $tmp_directory/date.txt) ]; then
 fi
 
 #deleting possible old content
-rm $tmp_directory/{logfiles,selection_today_unsorted,selection_today_sorted,selection_removed_old,composition1,composition2,server,complain,ban,kick,groupchange,channel}.txt >/dev/null 2>&1
+rm $tmp_directory/{logfiles,selection_today_unsorted,selection_today_sorted,selection_removed_old,composition1,composition2,server,complaint,ban,kick,groupchange,channel}.txt >/dev/null 2>&1
 
 ## log file selection
 #get the currently used logfiles
 ls -t $tslogs | head -n2 | sort > $logfiles
 
 #from the $logfiles get everything from today
-cat $tslogs/$(sed -n '1p' $logfiles) | grep $(date -u '+%Y-%m-%d') >> $log_selection_today_unsorted
+cat $tslogs/$(sed -n '1p' $logfiles) | grep $(date -u '+%Y-%m-%d') > $log_selection_today_unsorted
 cat $tslogs/$(sed -n '2p' $logfiles) | grep $(date -u '+%Y-%m-%d') >> $log_selection_today_unsorted
 
 # sort logentries
@@ -100,18 +100,14 @@ sort $log_selection_today_unsorted > $log_selection_today
 #if  $log_history file exists append if not create it
 if [ -s  $log_history ]; then
 	#it does exist
-	cat $log_history $log_selection_today > $composition1
-	sort $log_history | uniq > $log_history
-	clearcomp
+	grep -v -F -x -f $log_history $log_selection_today  > $log_removed_old
+	cat $log_removed_old >> $log_history
 else
 	#it doesn't exist
 	cat $log_selection_today > $log_history
 	# first run of the day history = log_removed_old
 	cat $log_selection_today > $log_removed_old
 fi
-
-#comparing the selection to the history file and printing just the new lines
-grep -v -F -x -f $log_history $log_selection_today  > $log_removed_old
 
 
 #################################################
