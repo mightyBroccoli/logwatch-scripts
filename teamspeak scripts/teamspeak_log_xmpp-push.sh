@@ -38,6 +38,7 @@ currentday=$(date -u '+%Y-%m-%d')
 # comppositon variables
 composition1=$tmp_directory/composition1.txt
 composition2=$tmp_directory/composition2.txt
+composition3=$tmp_directory/composition3.txt
 server=$tmp_directory/server.txt
 complaint=$tmp_directory/complaint.txt
 ban=$tmp_directory/ban.txt
@@ -61,7 +62,7 @@ pushstuff()
 clearcomp()
 {
 	# remove the composition files
-	rm $composition1 $composition2 >/dev/null 2>&1
+	rm $composition1 $composition2 $composition3 >/dev/null 2>&1
 }
 
 
@@ -118,7 +119,7 @@ grep -E 'ServerMain|stopped|Accounting|Warning|ERROR' $log_removed_old  >> $comp
 
 {	echo -e "---- Server ----\n"
 	sort $composition1
-	echo -e "---- Server End ----\n" 
+	echo -e "---- Server End ----" 
 } >> $composition2
 
 #paste the shit into the file and remove the tmp files afterwords
@@ -133,7 +134,7 @@ grep "^complaint" $log_removed_old >> $composition1
 
 {	echo -e "---- Complaint ----\n"
 	cat $composition1
-	echo -e "---- Complaint End ----\n"
+	echo -e "---- Complaint End ----"
 } >> $composition2
 
 #paste the shit into the file and remove the tmp files afterwords
@@ -147,7 +148,7 @@ clearcomp
 grep -E 'ban added|BanManager' $log_removed_old  >> $composition1
 {	echo -e "---- Ban ----\n"
 	sort $composition1
-	echo -e "---- Ban End ----\n"
+	echo -e "---- Ban End ----"
 }>> $composition2
 
 #paste the shit into the file and remove the tmp files afterwords
@@ -161,7 +162,7 @@ grep "reason 'invokerid" $log_removed_old >> $composition1
 
 {	echo -e "---- Kick ----\n"
 	cat $composition1
-	echo -e "---- Kick End ----\n"
+	echo -e "---- Kick End ----"
 } >> $composition2
 
 #paste the shit into the file and remove the tmp files afterwords
@@ -172,20 +173,30 @@ fi
 clearcomp
 
 ## Group change ##
-{	echo -e "---- Group change ----\n" 
-	echo -e "--- added ---\n"
-} >> $composition2
+echo -e "---- Group change ----\n" >> $composition2
+
 grep "was added to servergroup" $log_removed_old > $composition1
-{	cat $composition1
-	echo -e "--- removed ---\n"
-} >> $composition2
-grep "was removed from servergroup" $log_removed_old> $composition1
-{	cat $composition1
-	echo -e "---- Group change End ----\n"
-} >> $composition2
+if [ -s $composition1 ]; then
+	{
+		echo -e "--- added ---\n"
+		cat $composition1
+	} >> $composition2
+	cat $composition1 >> $composition3
+fi
+
+grep "was removed from servergroup" $log_removed_old > $composition1
+if [ -s $composition1 ]; then
+	{
+		echo -e "--- removed ---\n"
+		cat $composition1
+	} >> $composition2
+	cat $composition1 >> $composition3
+fi
+
+echo -e "---- Group change End ----" >> $composition2
 
 #paste the shit into the file
-if [ -s $composition1 ]; then
+if [ -s $composition3 ]; then
 	cat $composition2 >> $groupchange
 	pushstuff $groupchange
 fi
@@ -198,8 +209,8 @@ cat $composition2 > $composition1
 
 {	echo -e "---- Channel ----\n"
 	sort $composition1
-	echo -e "---- Channel End ----\n"
-} >> $composition2
+	echo -e "---- Channel End ----"
+} > $composition2
 
 #paste the shit into the file and remove the tmp files afterwords
 if [ -s $composition1 ]; then
