@@ -1,9 +1,21 @@
 #!/bin/sh
-
+#
+## Version 0.0.1
+#
+#
+## Dependencies
+#
+# shell access
+# teamspeak 3 server
+# anacron / cron
+# bash > 4.2
+# bashutils
+#
+#
 ## Usage
 # edit all the user variables and possibly the tslog path to fit your needs
 # run this script every x minutes to send the lines accumulated in the log files via cron eg
-# */15 * * * * /PATH/teamspeak_log_xmpp-push.sh
+# */x * * * * /PATH/teamspeak_log_xmpp-push.sh
 
 
 ## user variables
@@ -13,9 +25,9 @@ xmpp_server=SERVER.TLD
 xmpp_recipient=TO@ANOTHERSERVER.TLD	# the complete jid
 ressource=RANDOMSHIT				# some random string to indetify
 tslogs=/etc/teamspeak3-server_linux_amd64/logs
+tmp_directory=/tmp/teamspeak
 
 # selection variables
-tmp_directory=/tmp/teamspeak
 logfiles=$tmp_directory/logfiles.txt
 log_selection_today_unsorted=$tmp_directory/selection_today_unsorted.txt
 log_selection_today=$tmp_directory/selection_today_sorted.txt
@@ -25,6 +37,7 @@ log_history=$tmp_directory/today_history.txt
 # comppositon variables
 composition1=$tmp_directory/composition1.txt
 composition2=$tmp_directory/composition2.txt
+currentday=$(date -u '+%Y-%m-%d')
 server=$tmp_directory/server.txt
 complaint=$tmp_directory/complaint.txt
 ban=$tmp_directory/ban.txt
@@ -36,6 +49,7 @@ channel=$tmp_directory/channel.txt
 
 ## todo
 # code cleaning
+
 
 ## functions
 pushstuff()
@@ -50,7 +64,20 @@ clearcomp()
 	rm $composition1 $composition2 >/dev/null 2>&1
 }
 
+
+## firstrun setup
+#first run setup to get the date file accurate
+if [ "$1" = "-setup" ]; then
+	date -u '+%Y-%m-%d' > $tmp_directory/date.txt
+fi
+
 ## preparations
+#is the history relevant
+if [ ! "$currentday" == $(cat $tmp_directory/date.txt ]; then
+	#they are not the same
+	rm $log_history
+fi
+
 #check if tmp directory is present
 if [ ! -d "$tmp_directory" ]; then
 	mkdir /tmp/teamspeak/
@@ -78,6 +105,8 @@ if [[ -s  $log_history ]]; then
 else
 	#it doesn't exist
 	cat $log_selection_today > $log_history
+	# first run of the day history = log_removed_old
+	cat $log_selection_today > $log_removed_old
 fi
 
 #comparing the selection to the history file and printing just the new lines
