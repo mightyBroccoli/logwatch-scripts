@@ -16,11 +16,10 @@
 # replace mailaddr_to/_from and possibly the tslog path
 # place inside /etc/cron.daily to run this script on a daily basis
 
-
-#user  variables
-mailaddr_to=YOURMAIL@DOMAIN.TLD
-mailaddr_from=MAILFROM@YOURDOMAIN.TLD
-email=yes
+# user specific config file
+tmp_directory=/tmp/teamspeak/daily_mail
+configfile=$tmp_directory/user.config
+configfile_secured=$tmp_directory/tmp.config
 
 #system specific variables
 tslogs=/etc/teamspeak3-server_linux_amd64/logs
@@ -28,9 +27,8 @@ service_script=ts3server.service
 tsuser=teamspeak
 
 #log files
-tmp_directory=/tmp/teamspeak/daily_mail
-logfiles=$tmp_directory/teamspeak_daily_log_files
-daily_log=$tmp_directory/teamspeak_daily_log
+logfiles=$tmp_directory/teamspeak_daily_log_files.txt
+daily_log=$tmp_directory/teamspeak_daily_log.txt
 
 # comppositon variables
 composition1=$tmp_directory/composition1.txt
@@ -38,9 +36,9 @@ composition2=$tmp_directory/composition2.txt
 message_body=$tmp_directory/teamspeak_log_messagebody.txt
 mailcomposition=$tmp_directory/teamspeak_mail_composition.txt
 
-## todo
-#optimization use lsof with teamspeak pid to find used log files
 
+## todo
+# code cleaning
 
 ## functions
 clearcomp()
@@ -49,9 +47,27 @@ clearcomp()
 	rm $composition1 $composition2 >/dev/null 2>&1
 }
 
+## preparations
+#check if tmp directory is present if not create it
+if [ ! -d "$tmp_directory" ]; then
+	mkdir $tmp_directory
+fi
+
+#first run check
+if [ ! -f "$configfile" ]; then
+	#config file is not present
+	echo -e "no config file has been set. copy the sample config file to $configfile"
+	exit
+fi
+
+# check if config file contains something we don't want
+if grep -E -q -v '^#|^[^ ]*=[^;]*' "$configfile"; then
+  grep -E '^#|^[^ ]*=[^;&]*'  "$configfile" > "$configfile_secured"
+  configfile="$configfile_secured"
+fi
 
 #cleaning work environment
-rm -f $tmp_directory/*
+rm $tmp_directory/{teamspeak_log_messagebody,teamspeak_mail_composition,teamspeak_daily_log_files,teamspeak_daily_log}.txt >/dev/null 2>&1
 
 # picking the logfiles from the running teamspeak server for the selection
 ls -t $tslogs | head -n2 | sort >> $logfiles
@@ -210,4 +226,4 @@ if [ $email == yes ]; then
 fi
 
 #removing tmp
-rm -f $tmp_directory/*
+rm $tmp_directory/{teamspeak_log_messagebody,teamspeak_mail_composition,teamspeak_daily_log_files,teamspeak_daily_log}.txt >/dev/null 2>&1
