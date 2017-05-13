@@ -71,9 +71,7 @@ fi
 #first run check
 if [ ! -f "$configfile" ]; then
 	#config file is not present
-	echo -e "no config file has been set. copy the sample config file to $configfile" > $composition1
-	pushstuff $composition1
-	clearcomp
+	echo -e "no config file has been set. copy the sample config file to $configfile"
 	exit
 fi
 
