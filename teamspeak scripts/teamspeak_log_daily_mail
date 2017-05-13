@@ -184,12 +184,14 @@ if [ -s $composition1 ]; then
 	echo -e "------------------ Group change -------------------\n" >> $message_body
 	grep 'was added to servergroup' $composition1 > $composition2
 	if [ -s $composition2 ]; then
-		echo -e "--- added ---\n" >> $composition2
+		echo -e "--- added ---\n" > $composition2
+		grep 'was added to servergroup' $composition1 >> $composition2
 		cat $composition2 >> $message_body
 	fi
 	grep 'was removed from servergroup' $composition1 > $composition2
 	if [ -s $composition2 ]; then
-		echo -e "--- removed ---\n" >> $composition2
+		echo -e "--- removed ---\n" > $composition2
+		grep 'was removed from servergroup' $composition1 > $composition2
 		cat $composition2 >> $message_body
 	fi
 	echo -e "---------------- Group change End -----------------\n" >> $message_body
