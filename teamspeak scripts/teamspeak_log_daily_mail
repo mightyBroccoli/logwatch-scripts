@@ -66,6 +66,9 @@ if grep -E -q -v '^#|^[^ ]*=[^;]*' "$configfile"; then
   configfile="$configfile_secured"
 fi
 
+# source the config file
+source  $"configfile"
+
 #cleaning work environment
 rm $tmp_directory/{teamspeak_log_messagebody,teamspeak_mail_composition,teamspeak_daily_log_files,teamspeak_daily_log}.txt >/dev/null 2>&1
 
