@@ -24,6 +24,7 @@ script that iterates through the latest teamspeak loglines and captures the impo
 * anacron / cron
 * bash > 4.2
 * bashutils
+* sendxmpp
 
 ### install
 run this script via cron/anacron as often as you like the script will only send new loglines and not the previous ones.
