@@ -1,0 +1,9 @@
+### teamspeak_log_xmpp_push
+#just the username not the complete jid
+xmpp_username=FROM
+xmpp_password=PASSWORD
+xmpp_server=SERVER.TLD
+#the complete jid
+xmpp_recipient=TO@ANOTHERSERVER.TLD
+# some random string to indetify
+ressource=RANDOMSHIT

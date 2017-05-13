@@ -17,15 +17,11 @@
 # run this script every x minutes to send the lines accumulated in the log files via cron eg
 # */x * * * * /PATH/teamspeak_log_xmpp-push.sh
 
-
-## user variables
-xmpp_username=FROM					# just the username not the complete jid
-xmpp_password=PASSWORD
-xmpp_server=SERVER.TLD
-xmpp_recipient=TO@ANOTHERSERVER.TLD	# the complete jid
-ressource=RANDOMSHIT				# some random string to indetify
-tslogs=/etc/teamspeak3-server_linux_amd64/logs
+#variables
 tmp_directory=/tmp/teamspeak
+tslogs=/etc/teamspeak3-server_linux_amd64/logs
+configfile=$tmp_directory/user.config
+configfile_secured=$tmp_directory/tmp.config
 
 # selection variables
 logfiles=$tmp_directory/logfiles.txt
@@ -56,7 +52,7 @@ channel=$tmp_directory/channel.txt
 pushstuff()
 {
 	# xmpp push function with variable message
-	sendxmpp -u $xmpp_username -p $xmpp_password -j $xmpp_server --tls --resource $ressource $xmpp_recipient --message "$1"
+	sendxmpp -u "$xmpp_username" -p "$xmpp_password" -j "$xmpp_server" --tls --resource "$ressource" "$xmpp_recipient" --message "$1"
 }
 
 clearcomp()
@@ -69,8 +65,26 @@ clearcomp()
 ## preparations
 #check if tmp directory is present if not create it
 if [ ! -d "$tmp_directory" ]; then
-	mkdir /tmp/teamspeak/
+	mkdir $tmp_directory
 fi
+
+#first run check
+if [ ! -f "$configfile" ]; then
+	#config file is not present
+	echo -e "no config file has been set. copy the sample config file to $configfile" > $composition1
+	pushstuff $composition1
+	clearcomp
+	exit
+fi
+
+# check if config file contains something we don't want
+if grep -E -q -v '^#|^[^ ]*=[^;]*' "$configfile"; then
+  grep -E '^#|^[^ ]*=[^;&]*'  "$configfile" > "$configfile_secured"
+  configfile="$configfile_secured"
+fi
+
+# source the config file
+source  $"configfile"
 
 #is the history relevant
 #check if date file is present

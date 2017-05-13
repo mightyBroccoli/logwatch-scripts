@@ -1,0 +1,4 @@
+### teamspeak_log_daily_mail
+mailaddr_to=YOURMAIL@DOMAIN.TLD
+mailaddr_from=MAILFROM@YOURDOMAIN.TLD
+email=yes
