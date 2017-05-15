@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-## Version 0.0.1
+## Version 1.1.0
 #
 #
 ## Dependencies
@@ -13,6 +13,7 @@
 #
 #
 ## Usage
+# copy the user.config.sample file to $tmp_directory/.user.config
 # edit all the user variables and possibly the tslog path to fit your needs
 # run this script every x minutes to send the lines accumulated in the log files via cron eg
 # */x * * * * /PATH/teamspeak_log_xmpp-push.sh
@@ -20,8 +21,9 @@
 #variables
 tmp_directory=/tmp/teamspeak
 tslogs=/etc/teamspeak3-server_linux_amd64/logs
-configfile=$tmp_directory/user.config
-configfile_secured=$tmp_directory/tmp.config
+configfile=$tmp_directory/.user.config
+configfile_secured=$tmp_directory/.tmp.config
+backupconf=/var/backups/teamspeak_log_xmpp-push_user.config
 
 # selection variables
 logfiles=$tmp_directory/logfiles.txt
@@ -70,19 +72,27 @@ fi
 
 #first run check
 if [ ! -f "$configfile" ]; then
-	#config file is not present
-	echo -e "no config file has been set. copy the sample config file to $configfile"
-	exit
+	if [ -f "$backupconf" ]; then
+		echo -e "no config inside $tmp_directory using $backupconf"
+		cp "$backupconf" "$configfile"
+	else
+		#config file is not present
+		echo -e "no config file has been set. copy the sample config file to $configfile"
+		exit
+	fi
+else
+	# copy config file to /var/backup
+	cp "$configfile" "$backupconf"
 fi
 
 # check if config file contains something we don't want
-if grep -E -q -v '^#|^[^ ]*=[^;]*' "$configfile"; then
-  grep -E '^#|^[^ ]*=[^;&]*'  "$configfile" > "$configfile_secured"
-  configfile="$configfile_secured"
+if	grep -E -q -v '^#|^[^ ]*=[^;]*' "$configfile"; then
+	grep -E '^#|^[^ ]*=[^;&]*'  "$configfile" > "$configfile_secured"
+	configfile="$configfile_secured"
 fi
 
 # source the config file
-source  $"configfile"
+source  "$configfile"
 
 #is the history relevant
 #check if date file is present
@@ -129,7 +139,7 @@ fi
 ## server ##
 grep -E 'ServerMain|stopped|Accounting|Warning|ERROR' $log_removed_old  >> $composition1
 
-{	echo -e "---- Server ----\n"
+{	echo -e "\n---- Server ----\n"
 	sort $composition1
 	echo -e "---- Server End ----" 
 } >> $composition2
@@ -144,7 +154,7 @@ clearcomp
 ## Complaint ##
 grep "^complaint" $log_removed_old >> $composition1
 
-{	echo -e "---- Complaint ----\n"
+{	echo -e "\n---- Complaint ----\n"
 	cat $composition1
 	echo -e "---- Complaint End ----"
 } >> $composition2
@@ -158,7 +168,7 @@ clearcomp
 
 ## Ban ##
 grep -E 'ban added|BanManager' $log_removed_old  >> $composition1
-{	echo -e "---- Ban ----\n"
+{	echo -e "\n---- Ban ----\n"
 	sort $composition1
 	echo -e "---- Ban End ----"
 }>> $composition2
@@ -172,7 +182,7 @@ clearcomp
 ## Kick ## 
 grep "reason 'invokerid" $log_removed_old >> $composition1
 
-{	echo -e "---- Kick ----\n"
+{	echo -e "\n---- Kick ----\n"
 	cat $composition1
 	echo -e "---- Kick End ----"
 } >> $composition2
@@ -185,7 +195,7 @@ fi
 clearcomp
 
 ## Group change ##
-echo -e "---- Group change ----\n" >> $composition2
+echo -e "\n---- Group change ----\n" >> $composition2
 
 grep "was added to servergroup" $log_removed_old > $composition1
 if [ -s $composition1 ]; then
@@ -219,7 +229,7 @@ grep channel $log_removed_old > $composition1
 grep VirtualServerBase $composition1 > $composition2
 cat $composition2 > $composition1
 
-{	echo -e "---- Channel ----\n"
+{	echo -e "\n---- Channel ----\n"
 	sort $composition1
 	echo -e "---- Channel End ----"
 } > $composition2

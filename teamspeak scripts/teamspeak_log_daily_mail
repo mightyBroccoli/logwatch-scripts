@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-## Version 1.0.1
+## Version 1.1.0
 #
 #
 ## Dependencies
@@ -13,13 +13,16 @@
 #
 #
 ## Usage
-# replace mailaddr_to/_from and possibly the tslog path
+# copy the user.config.sample file to $tmp_directory/.user.config
+# replace mailaddr_to/_from and possibly the tslog path to fit your needs
 # place inside /etc/cron.daily to run this script on a daily basis
 
 # user specific config file
 tmp_directory=/tmp/teamspeak/daily_mail
 configfile=$tmp_directory/user.config
 configfile_secured=$tmp_directory/tmp.config
+backupconf=/var/backups/teamspeak_log_daily_mail_user.config
+
 
 #system specific variables
 tslogs=/etc/teamspeak3-server_linux_amd64/logs
@@ -55,19 +58,27 @@ fi
 
 #first run check
 if [ ! -f "$configfile" ]; then
-	#config file is not present
-	echo -e "no config file has been set. copy the sample config file to $configfile"
-	exit
+	if [ -f "$backupconf" ]; then
+		echo -e "no config inside $tmp_directory using $backupconf"
+		cp "$backupconf" "$configfile"
+	else
+		#config file is not present
+		echo -e "no config file has been set. copy the sample config file to $configfile"
+		exit
+	fi
+else
+	# copy config file to /var/backup
+	cp "$configfile" "$backupconf"
 fi
 
 # check if config file contains something we don't want
-if grep -E -q -v '^#|^[^ ]*=[^;]*' "$configfile"; then
-  grep -E '^#|^[^ ]*=[^;&]*'  "$configfile" > "$configfile_secured"
-  configfile="$configfile_secured"
+if	grep -E -q -v '^#|^[^ ]*=[^;]*' "$configfile"; then
+	grep -E '^#|^[^ ]*=[^;&]*'  "$configfile" > "$configfile_secured"
+	configfile="$configfile_secured"
 fi
 
 # source the config file
-source  $"configfile"
+source  "$configfile"
 
 #cleaning work environment
 rm $tmp_directory/{teamspeak_log_messagebody,teamspeak_mail_composition,teamspeak_daily_log_files,teamspeak_daily_log}.txt >/dev/null 2>&1
@@ -219,7 +230,7 @@ clearcomp
 cat $message_body >> /var/log/teamspeak/teamspeak_report.log
 
 #mail daily reports
-if [ $email == yes ]; then
+if [ "$email" = yes ]; then
 	#file is not empty
 	{	echo -e "To: $mailaddr_to"
 	 	echo -e "From: $mailaddr_from"
