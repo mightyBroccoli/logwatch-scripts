@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-## Version 1.0.1
+## Version 1.1.0
 #
 #
 ## Dependencies
@@ -13,7 +13,8 @@
 #
 #
 ## Usage
-# replace mailaddr_to/_from and possibly the tslog path
+# copy the user.config.sample file to $tmp_directory/.user.config
+# replace mailaddr_to/_from and possibly the tslog path to fit your needs
 # place inside /etc/cron.daily to run this script on a daily basis
 
 # user specific config file
