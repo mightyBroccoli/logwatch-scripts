@@ -10,6 +10,7 @@ Script that iterates through the latest teamspeak logfiles and captures the impo
 * cat
 
 ### install
+Copy the provided user.config.sample to directory specified as $tmp_directory and name it .user.config. Place all the needed info in the .user.config file.
 Place scriptfile inside anacron `/etc/cron.daily` or run this script via `@daily` with a dedicated cronjob
 `@daily /PATH/TO/SCRIPT/teamspeak_log_daily_mail`
 
@@ -46,6 +47,7 @@ Script that iterates through the latest teamspeak loglines and captures the impo
 * sendxmpp
 
 ### install
+Copy the provided user.config.sample to directory specified as $tmp_directory and name it .user.config. Place all the needed info in the .user.config file.
 run this script via cron/anacron as often as you like. The script will only use new loglines and not the previous ones in consideration for natification.
 As an example to run it every 15 mins via cron `*/15 * * * * /PATH/TO/SCRIPT/teamspeak_log_xmpp-push.sh`
 

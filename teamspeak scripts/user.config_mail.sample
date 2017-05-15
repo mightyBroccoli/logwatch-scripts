@@ -1,4 +1,7 @@
 ### teamspeak_log_daily_mail
+# Email Adress which should recieve the logmail
 mailaddr_to=YOURMAIL@DOMAIN.TLD
+# Email Adress from which the logmail is send from
 mailaddr_from=MAILFROM@YOURDOMAIN.TLD
+# should the script even send Mails
 email=yes

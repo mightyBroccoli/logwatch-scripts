@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-## Version 0.0.1
+## Version 1.1.0
 #
 #
 ## Dependencies
@@ -13,6 +13,7 @@
 #
 #
 ## Usage
+# copy the user.config.sample file to $tmp_directory/.user.config
 # edit all the user variables and possibly the tslog path to fit your needs
 # run this script every x minutes to send the lines accumulated in the log files via cron eg
 # */x * * * * /PATH/teamspeak_log_xmpp-push.sh
