@@ -195,27 +195,45 @@ fi
 clearcomp
 
 ## Group change ##
-echo -e "\n---- Group change ----\n" >> $composition2
+grep -E "was deleted by|was copied by|was added to|was added by|was removed from" $log_removed_old | grep -v "permission '" > $composition1
+echo -e "\n---- Group ----" >> $composition2
 
-grep "was added to servergroup" $log_removed_old > $composition1
-if [ -s $composition1 ]; then
+#created or copied group
+grep -E "was copied by|was added by" $composition1 > $composition3
+if [ -s $composition3 ]; then
 	{
-		echo -e "--- added ---\n"
-		cat $composition1
+		echo -e "--- created/ copied ---\n"
+		cat $composition3
 	} >> $composition2
-	cat $composition1 >> $composition3
 fi
 
-grep "was removed from servergroup" $log_removed_old > $composition1
-if [ -s $composition1 ]; then
+# deleted group
+grep "was deleted by" $composition1 > $composition3
+if [ -s $composition3 ]; then
 	{
-		echo -e "--- removed ---\n"
-		cat $composition1
+		echo -e "--- deleted ---\n"
+		cat $composition3
 	} >> $composition2
-	cat $composition1 >> $composition3
 fi
 
-echo -e "---- Group change End ----" >> $composition2
+# sombody was added to servergroup
+grep "was added to" $composition1 > $composition3
+if [ -s $composition3 ]; then
+	{
+		echo -e "--- added to---\n"
+		cat $composition3
+	} >> $composition2
+fi
+
+#somebody was removed from a group
+grep "was removed from" $composition1 > $composition3
+if [ -s $composition1 ]; then
+	{
+		echo -e "--- removed from---\n"
+		cat $composition3
+	} >> $composition2
+fi
+echo -e "---- Group End ----" >> $composition2
 
 #paste the shit into the file
 if [ -s $composition3 ]; then
@@ -225,10 +243,7 @@ fi
 clearcomp
 
 ## Channel ##
-grep channel $log_removed_old > $composition1
-grep VirtualServerBase $composition1 > $composition2
-cat $composition2 > $composition1
-
+grep channel $log_removed_old | grep VirtualServerBase > $composition1
 {	echo -e "\n---- Channel ----\n"
 	sort $composition1
 	echo -e "---- Channel End ----"
