@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-## Version 1.1.0
+## Version 1.2.0
 #
 #
 ## Dependencies
@@ -19,7 +19,8 @@
 
 # user specific config file
 tmp_directory=/tmp/teamspeak/daily_mail
-configfile=$tmp_directory/user.config
+archive=/var/log/teamspeak
+configfile=$tmp_directory/.user.config
 configfile_secured=$tmp_directory/tmp.config
 backupconf=/var/backups/teamspeak_log_daily_mail_user.config
 
@@ -191,51 +192,74 @@ fi
 clearcomp
 
 ##group changed
-grep 'was added to servergroup' $daily_log >>  $composition1
-grep 'was removed from servergroup' $daily_log >>  $composition1
+grep -E "was deleted by|was copied by|was added to|was added by|was removed from" $daily_log | grep -v "permission '" >>  $composition1
 #paste file only when log file has data in it
 if [ -s $composition1 ]; then
-	echo -e "------------------ Group change -------------------\n" >> $message_body
-	grep 'was added to servergroup' $composition1 > $composition2
+	echo -e "------------------ Group change -------------------" >> $message_body
+
+	#someone added to a group
+	grep 'was added to' $composition1 > $composition2
 	if [ -s $composition2 ]; then
-		echo -e "--- added ---\n" > $composition2
-		grep 'was added to servergroup' $composition1 >> $composition2
-		cat $composition2 >> $message_body
+		{	echo -e "--- added to ---\n"
+		 	grep 'was added to' $composition1
+		} >> $message_body
 	fi
-	grep 'was removed from servergroup' $composition1 > $composition2
+
+	#somebody removed from a group
+	grep 'was removed from' $composition1 > $composition2
 	if [ -s $composition2 ]; then
-		echo -e "--- removed ---\n" > $composition2
-		grep 'was removed from servergroup' $composition1 > $composition2
-		cat $composition2 >> $message_body
+		{	echo -e "--- removed from ---\n"
+			grep 'was removed from' $composition1
+		} >> $message_body
+	fi
+
+	#created or copied a group
+	grep -E "was copied by|was added by" $composition1 > $composition2
+	if [ -s $composition2 ]; then
+		{
+			echo -e "--- created/ copied ---\n"
+			grep -E "was copied by|was added by" $composition1
+		} >> $message_body
+	fi
+
+	#deleted a group
+	grep "was deleted by" $composition1 > $composition2
+	if [ -s $composition2 ]; then
+		{
+			echo -e "--- deleted ---\n"
+			grep "was deleted by" $composition1
+		} >> $message_body
 	fi
 	echo -e "---------------- Group change End -----------------\n" >> $message_body
 fi
 clearcomp
 
 ##channel created
-grep "channel" $daily_log>> $composition1
-grep "VirtualServerBase" $composition1>> $composition2
+grep "channel" $daily_log | grep "VirtualServerBase">> $composition1
 #paste file only when log file has data in it
-if [ -s $composition2 ]; then
+if [ -s $composition1 ]; then
 	{	echo -e "--------------------- Channel ---------------------\n"
-	 	cat $composition2
+	 	cat $composition1
 	 	echo -e "------------------- Channel End -------------------\n"
 	} >> $message_body
 fi
 echo -e "-------------------- Teamspeak End -----------------------" >> $message_body
 clearcomp
 
-##sorting log entries and pushing to logfile
-#2016-04-12 10:33:52.637083 sample timestamp
-cat $message_body >> /var/log/teamspeak/teamspeak_report.log
+## archive daily reports
+#check if archive directory is present
+if [ ! -d "$tmp_directory" ]; then
+	mkdir $tmp_directory
+fi
+
+cat $message_body >> $archive/teamspeak_report.log
 
 #mail daily reports
 if [ "$email" = yes ]; then
 	#file is not empty
 	{	echo -e "To: $mailaddr_to"
 	 	echo -e "From: $mailaddr_from"
-	 	echo -e "Subject: LogReport Teamspeak $(date -d "yesterday" '+%d.%m.%Y')"
-	 	echo ""
+	 	echo -e "Subject: LogReport Teamspeak $(date -d "yesterday" '+%d.%m.%Y')\n"
 	 	cat $message_body
 	} >> $mailcomposition
 	su $tsuser -s /bin/sh -c "cat $mailcomposition | /usr/sbin/sendmail -t"
