@@ -218,7 +218,7 @@ if [ -s $composition1 ]; then
 	if [ -s $composition2 ]; then
 		{
 			echo -e "--- created/ copied ---\n"
-			grep -E "was copied by|was added" $composition1
+			grep -E "was copied by|was added by" $composition1
 		} >> $message_body
 	fi
 
