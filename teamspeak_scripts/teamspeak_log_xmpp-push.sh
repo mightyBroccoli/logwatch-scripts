@@ -196,7 +196,6 @@ clearcomp
 
 ## Group change ##
 grep -E "was deleted by|was copied by|was added to|was added by|was removed from" $log_removed_old | grep -v "permission '" > $composition1
-echo -e "\n---- Group ----" >> $composition2
 
 #created or copied group
 grep -E "was copied by|was added by" $composition1 > $composition3
@@ -227,17 +226,19 @@ fi
 
 #somebody was removed from a group
 grep "was removed from" $composition1 > $composition3
-if [ -s $composition1 ]; then
+if [ -s $composition3 ]; then
 	{
 		echo -e "--- removed from---\n"
 		cat $composition3
 	} >> $composition2
 fi
-echo -e "---- Group End ----" >> $composition2
 
 #paste the shit into the file
-if [ -s $composition3 ]; then
-	cat $composition2 >> $groupchange
+if [ -s $composition2 ]; then
+	{	echo -e "\n---- Group ----"
+	 	cat $composition2
+	 	echo -e "---- Group End ----"
+	} >> $groupchange
 	pushstuff $groupchange
 fi
 clearcomp
