@@ -141,7 +141,7 @@ grep -E 'ServerMain|stopped|Accounting|Warning|ERROR' $log_removed_old  >> $comp
 
 {	echo -e "\n---- Server ----\n"
 	sort $composition1
-	echo -e "---- Server End ----" 
+	echo -e "---- Server End ----"
 } >> $composition2
 
 #paste the shit into the file and remove the tmp files afterwords
@@ -167,7 +167,7 @@ fi
 clearcomp
 
 ## Ban ##
-grep -E 'ban added|BanManager' $log_removed_old  >> $composition1
+grep -E 'ban added|BanManager|ban deleted' $log_removed_old  >> $composition1
 {	echo -e "\n---- Ban ----\n"
 	sort $composition1
 	echo -e "---- Ban End ----"
@@ -179,7 +179,7 @@ if [ -s $composition1 ]; then
 fi
 clearcomp
 
-## Kick ## 
+## Kick ##
 grep "reason 'invokerid" $log_removed_old >> $composition1
 
 {	echo -e "\n---- Kick ----\n"
