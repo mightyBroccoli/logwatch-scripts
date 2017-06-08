@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-## Version 1.2.0
+## Version 1.2.2
 #
 #
 ## Dependencies
@@ -141,7 +141,7 @@ grep -E 'ServerMain|stopped|Accounting|Warning|ERROR' $log_removed_old  >> $comp
 
 {	echo -e "\n---- Server ----\n"
 	sort $composition1
-	echo -e "---- Server End ----" 
+	echo -e "---- Server End ----"
 } >> $composition2
 
 #paste the shit into the file and remove the tmp files afterwords
@@ -176,11 +176,12 @@ grep -E 'ban added|BanManager' $log_removed_old  >> $composition1
 #paste the shit into the file and remove the tmp files afterwords
 if [ -s $composition1 ]; then
 	cat $composition2 > $ban
+	pushstuff $ban
 fi
 clearcomp
 
-## Kick ## 
-grep "reason 'invokerid" $log_removed_old >> $composition1
+## Kick ##
+grep "reason 'invokerid" $log_removed_old | grep -v "bantime" >> $composition1
 
 {	echo -e "\n---- Kick ----\n"
 	cat $composition1
@@ -198,39 +199,35 @@ clearcomp
 grep -E "was deleted by|was copied by|was added to|was added by|was removed from" $log_removed_old | grep -v "permission '" > $composition1
 
 #created or copied group
-grep -E "was copied by|was added by" $composition1 > $composition3
-if [ -s $composition3 ]; then
-	{
-		echo -e "--- created/ copied ---\n"
-		cat $composition3
-	} >> $composition2
+grep -E "was copied by|was added by" $composition1 > $composition2
+if [ -s $composition2 ]; then
+	{	echo -e "--- created/ copied ---\n"
+		cat $composition2
+	} >> $composition3
 fi
 
 # deleted group
-grep "was deleted by" $composition1 > $composition3
-if [ -s $composition3 ]; then
-	{
-		echo -e "--- deleted ---\n"
-		cat $composition3
-	} >> $composition2
+grep "was deleted by" $composition1 > $composition2
+if [ -s $composition2 ]; then
+	{	echo -e "--- deleted ---\n"
+		cat $composition2
+	} >> $composition3
 fi
 
 # sombody was added to servergroup
-grep "was added to" $composition1 > $composition3
-if [ -s $composition3 ]; then
-	{
-		echo -e "--- added to---\n"
-		cat $composition3
-	} >> $composition2
+grep "was added to" $composition1 > $composition2
+if [ -s $composition2 ]; then
+	{	echo -e "--- added to---\n"
+		cat $composition2
+	} >> $composition3
 fi
 
 #somebody was removed from a group
-grep "was removed from" $composition1 > $composition3
-if [ -s $composition3 ]; then
-	{
-		echo -e "--- removed from---\n"
-		cat $composition3
-	} >> $composition2
+grep "was removed from" $composition1 > $composition2
+if [ -s $composition2 ]; then
+	{	echo -e "--- removed from---\n"
+		cat $composition2
+	} >> $composition3
 fi
 
 #paste the shit into the file
