@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-## Version 1.2.2
+## Version 1.2.3
 #
 #
 ## Dependencies
@@ -61,6 +61,7 @@ clearcomp()
 {
 	# remove the composition files
 	rm $composition1 $composition2 $composition3 >/dev/null 2>&1
+	changed=no
 }
 
 
@@ -139,14 +140,12 @@ fi
 ## server ##
 grep -E 'ServerMain|stopped|Accounting|Warning|ERROR' $log_removed_old  >> $composition1
 
-{	echo -e "\n---- Server ----\n"
-	sort $composition1
-	echo -e "---- Server End ----"
-} >> $composition2
-
-#paste the shit into the file and remove the tmp files afterwords
+#if there is something do if not skip
 if [ -s $composition1 ]; then
-	cat $composition2 > $server
+	{	echo -e "---- Server ----\n"
+		cat $composition1
+		echo -e "\n---- Server End ----"
+	} >> $server
 	pushstuff $server
 fi
 clearcomp
@@ -154,28 +153,46 @@ clearcomp
 ## Complaint ##
 grep "^complaint" $log_removed_old >> $composition1
 
-{	echo -e "\n---- Complaint ----\n"
-	cat $composition1
-	echo -e "---- Complaint End ----"
-} >> $composition2
-
-#paste the shit into the file and remove the tmp files afterwords
+#if there is something do if not skip
 if [ -s $composition1 ]; then
-	cat $composition2 > $complaint
+	{	echo -e "---- Complaint ----\n"
+		cat $composition1
+		echo -e "\n---- Complaint End ----"
+	} >> $complaint
 	pushstuff $complaint
 fi
 clearcomp
 
 ## Ban ##
-grep -E 'ban added|BanManager' $log_removed_old  >> $composition1
-{	echo -e "\n---- Ban ----\n"
-	sort $composition1
-	echo -e "---- Ban End ----"
-}>> $composition2
+grep -E 'ban added|BanManager|ban deleted' $log_removed_old  >> $composition1
 
-#paste the shit into the file and remove the tmp files afterwords
+#if there is something do if not skip
 if [ -s $composition1 ]; then
-	cat $composition2 > $ban
+	#ban added
+	grep -E 'ban added' $composition1 > $composition2
+	if [ -s $composition2 ]; then
+		{	echo -e "--- Ban added ---\n"
+			cat $composition2
+			changed=yes
+		} >> $composition3
+	fi
+
+	#ban deleted
+	grep -E 'BanManager|ban deleted' $composition1 > $composition2
+	if [ -s $composition2 ]; then
+		{	echo -e "--- Ban deleted ---\n"
+			cat $composition2
+			changed=yes
+		} >> $composition3
+	fi
+fi
+
+#collect all BanManager info
+if [ "$changed" = yes ]; then
+	{	echo -e "---- Ban ----"
+		cat $composition3
+		echo -e "\n---- Ban End ----"
+	}>> $ban
 	pushstuff $ban
 fi
 clearcomp
@@ -183,14 +200,12 @@ clearcomp
 ## Kick ##
 grep "reason 'invokerid" $log_removed_old | grep -v "bantime" >> $composition1
 
-{	echo -e "\n---- Kick ----\n"
-	cat $composition1
-	echo -e "---- Kick End ----"
-} >> $composition2
-
-#paste the shit into the file and remove the tmp files afterwords
+#if there is something do if not skip
 if [ -s $composition1 ]; then
-	cat $composition2 > $kick
+	{	echo -e "---- Kick ----\n"
+		cat $composition1
+		echo -e "\n---- Kick End ----"
+	} >> $kick
 	pushstuff $kick
 fi
 clearcomp
@@ -198,43 +213,50 @@ clearcomp
 ## Group change ##
 grep -E "was deleted by|was copied by|was added to|was added by|was removed from" $log_removed_old | grep -v "permission '" > $composition1
 
-#created or copied group
-grep -E "was copied by|was added by" $composition1 > $composition2
-if [ -s $composition2 ]; then
-	{	echo -e "--- created/ copied ---\n"
-		cat $composition2
-	} >> $composition3
+#if there is something do if not skip
+if [ -s $composition1 ]; then
+	#created or copied group
+	grep -E "was copied by|was added by" $composition1 > $composition2
+	if [ -s $composition2 ]; then
+		{	echo -e "--- created/ copied ---\n"
+			cat $composition2
+			changed=yes
+		} >> $composition3
+	fi
+
+	# deleted group
+	grep "was deleted by" $composition1 > $composition2
+	if [ -s $composition2 ]; then
+		{	echo -e "--- deleted ---\n"
+			cat $composition2
+			changed=yes
+		} >> $composition3
+	fi
+
+	# sombody was added to servergroup
+	grep "was added to" $composition1 > $composition2
+	if [ -s $composition2 ]; then
+		{	echo -e "--- added to---\n"
+			cat $composition2
+			changed=yes
+		} >> $composition3
+	fi
+
+	#somebody was removed from a group
+	grep "was removed from" $composition1 > $composition2
+	if [ -s $composition2 ]; then
+		{	echo -e "--- removed from---\n"
+			cat $composition2
+			changed=yes
+		} >> $composition3
+	fi
 fi
 
-# deleted group
-grep "was deleted by" $composition1 > $composition2
-if [ -s $composition2 ]; then
-	{	echo -e "--- deleted ---\n"
-		cat $composition2
-	} >> $composition3
-fi
-
-# sombody was added to servergroup
-grep "was added to" $composition1 > $composition2
-if [ -s $composition2 ]; then
-	{	echo -e "--- added to---\n"
-		cat $composition2
-	} >> $composition3
-fi
-
-#somebody was removed from a group
-grep "was removed from" $composition1 > $composition2
-if [ -s $composition2 ]; then
-	{	echo -e "--- removed from---\n"
-		cat $composition2
-	} >> $composition3
-fi
-
-#paste the shit into the file
-if [ -s $composition2 ]; then
-	{	echo -e "\n---- Group ----"
-	 	cat $composition2
-	 	echo -e "---- Group End ----"
+#collect all groupchange infos
+if [ "$changed" = yes ]; then
+	{	echo -e "---- Group ----"
+	 	cat $composition3
+	 	echo -e "\n---- Group End ----"
 	} >> $groupchange
 	pushstuff $groupchange
 fi
@@ -242,14 +264,13 @@ clearcomp
 
 ## Channel ##
 grep channel $log_removed_old | grep VirtualServerBase > $composition1
-{	echo -e "\n---- Channel ----\n"
-	sort $composition1
-	echo -e "---- Channel End ----"
-} > $composition2
 
-#paste the shit into the file and remove the tmp files afterwords
+#if there is something do if not skip
 if [ -s $composition1 ]; then
-	cat $composition2 > $channel
+	{	echo -e "---- Channel ----\n"
+		sort $composition1
+		echo -e "\n---- Channel End ----"
+	} > $channel
 	pushstuff $channel
 fi
 clearcomp
