@@ -8,3 +8,21 @@ xmpp_server=SERVER.TLD
 xmpp_recipient=TO@ANOTHERSERVER.TLD
 # some random string to indetify
 ressource=RANDOMSHIT
+#
+#
+#
+## disable filter features ##
+# set these line to no to disable a specific filter (default = yes)
+#
+#enable_server=no
+#
+#enable_complaint=no
+#
+#enable_ban=no
+#
+#enable_kick=no
+#
+#enable_groups=no
+#
+#enable_channel=no
+#

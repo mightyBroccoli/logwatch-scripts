@@ -357,19 +357,34 @@ parameters
 
 
 ## server ##
-filter_server
+if [ "$enable_server" != false ]; then
+	filter_server
+fi
 
 ## Complaint ##
-filter_complaint
+if [ "$enable_complaint" != false ]; then
+	filter_complaint
+fi
 
 ## Ban ##
-filter_ban
+if [ "$enable_ban" != false ]; then
+	filter_ban
+fi
 
 ## Kick ##
-filter_kick
+if [ "$enable_kick" != false ]; then
+	filter_kick
+fi
 
 ## Group change ##
-filter_groups
+if [ "$enable_groups" != false ]; then
+	filter_groups
+fi
 
 ## Channel ##
-filter_channel
+if [ "$enable_channel" != false ];then
+	filter_channel
+fi
+
+#successfull exit
+exit 0
