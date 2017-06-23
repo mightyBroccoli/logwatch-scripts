@@ -14,15 +14,15 @@ ressource=RANDOMSHIT
 ## disable filter features ##
 # set these line to no to disable a specific filter (default = yes)
 #
-#enable_server=no
+#enable_server=false
 #
-#enable_complaint=no
+#enable_complaint=false
 #
-#enable_ban=no
+#enable_ban=false
 #
-#enable_kick=no
+#enable_kick=false
 #
-#enable_groups=no
+#enable_groups=false
 #
-#enable_channel=no
+#enable_channel=false
 #
