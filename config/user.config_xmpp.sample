@@ -12,7 +12,7 @@ ressource=RANDOMSHIT
 #
 #
 ## disable filter features ##
-# set these line to no to disable a specific filter (default = yes)
+# set these line to false to disable a specific filter (default = yes)
 #
 #enable_server=false
 #
