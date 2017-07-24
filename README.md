@@ -1,14 +1,17 @@
-# TeamSpeak3 Logwatch Scripts
-Scripts which iterate through the latest teamspeak logfiles and capture the important parts. Main goal is to filter out only those loglines from the past day (UTC) which matter. The last step is formatting these Lines nicely, to make it easy to see what happened.
+# TeamSpeak3 Logwatch Script
+Script which iterates through the latest teamspeak logfiles and captures the important parts. Main goal is to filter relevant loglines from the past day (UTC). Finally the selected lines are being formatted nicely, so it is easy to see what happened.
+There are two possible notification modes:
+- E-Mail
+- XMPP Push
 
 ## Dependencies
-For Mail:
+For Mail notifications:
 * shell access
 * bash > 4.2
 * teamspeak 3 server
 * anacron / cron
 
-Additional dependencies for XMPP:
+Additional dependencies for XMPP Push:
 * bashutils
 * sendxmpp
 
@@ -17,7 +20,7 @@ Copy the provided user.config.sample to directory specified as $tmp_directory an
 Place scriptfile inside anacron `/etc/cron.daily` or run this script via `@daily` with a dedicated cronjob
 `@daily /PATH/TO/SCRIPT/teamspeak_log_daily_mail`
 
-## Example for Email
+## Example for Email notifications
 This is just an example how the logmail could look like. The script will only send those parts which actually hold data.
 ```
 ---------------------- Teamspeak -------------------------
@@ -38,8 +41,8 @@ Main PID: 3305 (ts3server)
 -------------------- Teamspeak End -----------------------
 ```
 
-## Example for XMPP
-This is just an example for a notification pushed via XMPP. I anonymized the content. The script will only send notifications if there is content to notify about.
+## Example for XMPP Push
+This is just an example for a notification pushed via XMPP. The script will only send notifications if there is content to notify about.
 ```
 ---- Group change ----
 --- added ---
