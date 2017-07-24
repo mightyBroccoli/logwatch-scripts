@@ -1,6 +1,6 @@
 # README
 ## teamspeak logwatch script
-Script that iterates through the latest teamspeak logfiles and captures the important parts. Main goal is to filter out only those loglines from the past day (UTC). The last step is formatting these Lines nicely, to make it easy to see what happened.
+Script which iterates through the latest teamspeak logfiles and captures the important parts. Main goal is to filter out only those loglines from the past day (UTC) which matter. The last step is formatting these Lines nicely, to make it easy to see what happened.
 
 ### Dependencies teamspeak logwatch
 * shell access
@@ -15,7 +15,7 @@ Place scriptfile inside anacron `/etc/cron.daily` or run this script via `@daily
 `@daily /PATH/TO/SCRIPT/teamspeak_log_daily_mail`
 
 ### example
-As an example this could be a logmail. I anonymized the content. The script will only send those parts which actually hold data.
+This is just an example how the logmail could look like. I anonymized the content. The script will only send those parts which actually hold data.
 ```
 ---------------------- Teamspeak -------------------------
 -------------------- Server -----------------------
@@ -36,9 +36,9 @@ Main PID: 3305 (ts3server)
 ```
 
 ## teamspeak xmpp push
-Script that iterates through the latest teamspeak loglines and captures the important parts. Main goal is to  get the notification about important logevents more often.
+Script that iterates through the latest teamspeak loglines and captures the important parts. Main goal is to get the notification about important logevents quicker to take action quicker.
 
-### Dependencies teamspeak xmpp push
+### Dependencies teamspeak_xmpp_push
 * shell access
 * bash > 4.2
 * teamspeak 3 server
@@ -47,12 +47,11 @@ Script that iterates through the latest teamspeak loglines and captures the impo
 * sendxmpp
 
 ### install
-Copy the provided user.config.sample to directory specified as $tmp_directory and name it .user.config. Place all the needed info in the .user.config file.
-run this script via cron/anacron as often as you like. The script will only use new loglines and not the previous ones in consideration for natification.
-As an example to run it every 15 mins via cron `*/15 * * * * /PATH/TO/SCRIPT/teamspeak_log_xmpp-push.sh`
+Copy the provided user.config.sample to the directory specified as $tmp_directory and name it .user.config. Place all the needed info in the .user.config file. Run this script via cron/anacron as often as you like. The script will only use new loglines and not the previous ones in consideration for natification.
+For example to run it every 15 mins via cron `*/15 * * * * /PATH/TO/SCRIPT/teamspeak_log_xmpp-push.sh`
 
 ### example
-As an example for a notification pushed via xmpp. I anonymized the content. The script will only send if there is content.
+This is just an example for a notification pushed via XMPP. I anonymized the content. The script will only send notifications if there is content to notify about.
 ```
 ---- Group change ----
 --- added ---

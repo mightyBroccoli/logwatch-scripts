@@ -1,0 +1,31 @@
+### teamspeak_log_daily_mail
+# Email Adress which should recieve the logmail
+mailaddr_to=YOURMAIL@DOMAIN.TLD
+# Email Adress from which the logmail is send from
+mailaddr_from=MAILFROM@YOURDOMAIN.TLD
+# should the script even send Mails
+email=yes
+#
+#
+#
+## disable filter features ##
+# set these line to false to disable a specific filter (default = yes)
+#
+#enable_server=false
+#
+#enable_channel=false
+#
+#enable_groups=false
+#
+#enable_channel=false
+#
+#enable_complaint=false
+#
+#enable_ban=false
+#
+#enable_kick=false
+#
+#enable_perm=false
+#
+#enable_archive=false
+#
