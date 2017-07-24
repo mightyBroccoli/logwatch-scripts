@@ -1,4 +1,4 @@
-# README 
+# README
 ## teamspeak logwatch script
 Script that iterates through the latest teamspeak logfiles and captures the important parts. Main goal is to filter out only those loglines from the past day (UTC). The last step is formatting these Lines nicely, to make it easy to see what happened.
 
@@ -60,13 +60,3 @@ As an example for a notification pushed via xmpp. I anonymized the content. The 
 2017-05-12 22:09:01.658969|INFO    |VirtualServer |1  |client (id:USER ID) was added to servergroup 'SERVERGROUP NAME'(id:SERVERGROUP ID) by client 'USERNAME'(id:USER ID)
 ---- Group change End ----
 ```
-## proftpd logwatch script
-This is a script that searches through all proftpd logfiles and captures the important parts. It is configured to filter the logfiles from the past day only. The last step is emailing the results, nicely formatted, to see what happened on the proftpd server. Placed in anacron /etc/cron.daily this script will run on a daily basis.
-
-### Dependencies proftpd logwatch
-
-* valid Bash shell
-* proftpd installation
-* anacron or cron
-* cat
-* zcat
