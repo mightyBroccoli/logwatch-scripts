@@ -197,7 +197,7 @@ parameters()
 # Filter Server Messages Accounting/ ServerMain / Warning / ERROR
 filter_server()
 {
-	grep -E 'ServerMain|stopped|Accounting|Warning|ERROR' $log_removed_old  >> $composition1
+	grep -E 'ServerMain|stopped|Accounting|Warning|ERROR|CIDRManager' $log_removed_old  >> $composition1
 	#if there is something do if not skip
 	if [ -s $composition1 ]; then
 		{	echo -e "---- Server ----\n"
