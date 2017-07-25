@@ -50,3 +50,13 @@ This is just an example for a notification pushed via XMPP. The script will only
 2017-05-12 22:09:01.658969|INFO    |VirtualServer |1  |client (id:USER ID) was added to servergroup 'SERVERGROUP NAME'(id:SERVERGROUP ID) by client 'USERNAME'(id:USER ID)
 ---- Group change End ----
 ```
+
+## Donations
+If somebody is that enthusiastic about this project and does want to donate me some coffee, I would be really pleased and happy. I provide two possibilities: PayPal and Bitcoin
+<div>
+  <a href="bitcoin:1QJZTWenBvdLWTUachpLLd2dLXAZMGeU87">
+  <img src="https://magicbroccoli.de/images/bitcoin_qr.png" ></a>
+  <p>1QJZTWenBvdLWTUachpLLd2dLXAZMGeU87</p>
+</div>
+
+[![Donate with PayPal](https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=DXUYBYN2XCW9U)
