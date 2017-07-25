@@ -21,20 +21,13 @@
 # */x * * * * /PATH/teamspeak_log_xmpp-push.sh
 
 #variables
-tmp_directory=/tmp/teamspeak
+tmp_directory=/tmp/teamspeak/xmpp_push
 tslogs=/etc/teamspeak3-server_linux_amd64/logs
 configfile=$tmp_directory/.user.config
 configfile_secured=$tmp_directory/.tmp.config
 backupconf=/var/backups/teamspeak_log_xmpp-push_user.config
 
-# selection variables
-logfiles=$tmp_directory/logfiles.txt
-log_selection_today_unsorted=$tmp_directory/selection_today_unsorted.txt
-log_selection_today=$tmp_directory/selection_today_sorted.txt
-log_removed_old=$tmp_directory/selection_removed_old.txt
-log_history=$tmp_directory/today_history.txt
-currentday=$(date -u '+%Y-%m-%d')
-
+#### DONT CHANGE FROM HERE ####
 # comppositon variables
 composition1=$tmp_directory/composition1.txt
 composition2=$tmp_directory/composition2.txt
@@ -47,39 +40,18 @@ kick=$tmp_directory/kick.txt
 groupchange=$tmp_directory/groupchange.txt
 channel=$tmp_directory/channel.txt
 
-#### DONT CHANGE FROM HERE ####
+# selection variables
+logfiles=$tmp_directory/logfiles.txt
+log_selection_today_unsorted=$tmp_directory/selection_today_unsorted.txt
+log_selection_today=$tmp_directory/selection_today_sorted.txt
+log_removed_old=$tmp_directory/selection_removed_old.txt
+log_history=$tmp_directory/today_history.txt
+currentday=$(date -u '+%Y-%m-%d')
 
-# parameter
+# debug parameter
 debug=false
 
-###### FUNCTION SECTION ######
-display_help()
-{
-	echo -e "Teamspeak Log XMPP Push script"
-	echo -e "Run this script via Cronjob or periodically to achive full functionallity."
-	echo -e "Possible paramters"
-	echo -e "-h | -help : Print this message"
-	echo -e "\\nError Codes"
-	echo -e "10 : no config file is found, please use the install steps on Bitbucket."
-	echo -e "11 : missing dependencies"
-}
-pushstuff()
-{
-	# xmpp push function with variable message
-	sendxmpp -u "$xmpp_username" -p "$xmpp_password" -j "$xmpp_server" --tls --resource "$ressource" "$xmpp_recipient" --message "$1"
-}
-
-clearcomp()
-{
-	if [ "$1" = "-all" ]; then
-		#deleting possible old content
-		rm -f "$logfiles" "$selection_today_unsorted" "$selection_today_sorted" "$selection_removed_old" "$server" "$complaint" "$ban" "$kick" "$groupchange" "$channel"
-	fi
-	# remove the composition files
-	rm -f "$composition1" "$composition2" "$composition3"
-	changed=no
-}
-
+###### PRE RUN FUNCTION SECTION ######
 prerun_check()
 {
 	needed_commands="rm ls echo grep sort cat date sendxmpp"
@@ -94,7 +66,6 @@ prerun_check()
 	if ((missing_counter > 0)); then
 		printf "Minimum %d commands are missing in PATH, aborting\\n" "$missing_counter" >&2
 		exit 11
-		display_help
 	fi
 
 	#check if tmp directory is present if not create it
@@ -166,26 +137,58 @@ collect_and_prepare()
 	fi
 }
 
+###### General Functions ######
+clearcomp()
+{
+	if [ "$1" = "-all" ]; then
+		#deleting possible old content
+		rm -f "$logfiles" "$selection_today_unsorted" "$selection_today_sorted" "$selection_removed_old" "$server" "$complaint" "$ban" "$kick" "$groupchange" "$channel"
+	fi
+	# remove the composition files
+	rm -f "$composition1" "$composition2" "$composition3"
+	changed=false
+}
+
 debug()
 {
-	##debug parameter
+	# debug parameter
 	if [ "$debug" = "true" ]; then
 		#forcefully delete history every time the script runs
 		rm $log_history
 	fi
 }
 
-###### General Routines ######
+display_help()
+{
+	echo -e "Teamspeak Log XMPP Push script"
+	echo -e "Run this script via Cronjob or periodically to achive full functionallity."
+	echo -e "Possible paramters"
+	echo -e "-h | -help : Print this message"
+	echo -e "\\nError Codes"
+	echo -e "10 : no config file is found, please use the install steps on Bitbucket."
+	echo -e "11 : missing dependencies"
+}
+
+# catch  -h / --help
+if [ "$1" = "-h" -o "$1" = "--help" ]; then
+	display_help
+fi
+
+pushstuff()
+{
+	# xmpp push function with variable message
+	sendxmpp -u "$xmpp_username" -p "$xmpp_password" -j "$xmpp_server" --tls --resource "$ressource" "$xmpp_recipient" --message "$1"
+}
 
 ###### FILTER CODE SECTION ######
-
 # Filter Server Messages Accounting/ ServerMain / Warning / ERROR / CIDRManager
 filter_server()
 {
+	# only run this filter if $enable_server is true
 	if [ "$enable_server" != false ]; then
 		grep -E 'ServerMain|stopped|Accounting|Warning|ERROR|CIDRManager' $log_removed_old  >> $composition1
 
-		#if there is something do if not skip
+		# only paste the results if there are
 		if [ -s $composition1 ]; then
 			{	echo -e "---- Server ----\\n"
 				cat $composition1
@@ -200,10 +203,11 @@ filter_server()
 # Filter complaints
 filter_complaint()
 {
+	# only run this filter if $enable_complaint is true
 	if [ "$enable_complaint" != false ]; then
 		grep "^complaint" $log_removed_old >> $composition1
 
-		#if there is something do if not skip
+		# only paste the results if there are
 		if [ -s $composition1 ]; then
 			{	echo -e "---- Complaint ----\\n"
 				cat $composition1
@@ -218,10 +222,11 @@ filter_complaint()
 # Filter Kick messages
 filter_kick()
 {
+	# only run this filter if $enable_kick is true
 	if [ "$enable_kick" != false ]; then
 		grep "reason 'invokerid" $log_removed_old | grep -v "bantime" >> $composition1
-		
-		#if there is something do if not skip
+
+		# only paste the results if there are
 		if [ -s $composition1 ]; then
 			{	echo -e "---- Kick ----\\n"
 				cat $composition1
@@ -236,10 +241,11 @@ filter_kick()
 # Filter Channels added /deleted / edited
 filter_channel()
 {
+	# only run this filter if $enable_channel is true
 	if [ "$enable_channel" != false ];then
-		grep channel $log_removed_old | grep VirtualServerBase > $composition1
-		
-		#if there is something do if not skip
+		grep "channel" $log_removed_old | grep VirtualServerBase > $composition1
+
+		# only paste the results if there are
 		if [ -s $composition1 ]; then
 			{	echo -e "---- Channel ----\\n"
 				cat $composition1
@@ -254,31 +260,36 @@ filter_channel()
 # Filter bans added / deleted and general BanManager messages
 filter_ban()
 {
+	# only run this filter if $enable_ban is true
 	if [ "$enable_ban" != false ]; then
+		# first collect all ban related events
 		grep -E 'ban added|BanManager|ban deleted' $log_removed_old  >> $composition1
-		#if there is something do if not skip
+
+		# only paste the results if there are
 		if [ -s $composition1 ]; then
-			#ban added
+			# filter added bans
 			grep -E 'ban added' $composition1 > $composition2
 			if [ -s $composition2 ]; then
-				{	echo -e "--- Ban added ---\\n"
+				{	echo -e "---yes Ban added ---\\n"
 					cat $composition2
-					changed=yes
+					# change the "changed" value to true to indicate something has changed
+					changed=true
 				} >> $composition3
 			fi
 
-			#ban deleted
+			# filter deleted bans
 			grep -E 'BanManager|ban deleted' $composition1 > $composition2
 			if [ -s $composition2 ]; then
 				{	echo -e "--- Ban deleted ---\\n"
 					cat $composition2
-					changed=yes
+					# change the "changed" value to true to indicate something has changed
+					changed=true
 				} >> $composition3
 			fi
 		fi
 
-		#collect all BanManager info
-		if [ "$changed" = yes ]; then
+		# if "changed" is true paste the results in this mask
+		if [ "$changed" = true ]; then
 			{	echo -e "---- Ban ----"
 				cat $composition3
 				echo -e "\\n---- Ban End ----"
@@ -292,49 +303,51 @@ filter_ban()
 # Filter Group changes
 filter_groups()
 {
+	# only enable this filter if $enable_groups is true
 	if [ "$enable_groups" != false ]; then
 		grep -E "was deleted by|was copied by|was added to|was added by|was removed from" $log_removed_old | grep -v "permission '" > $composition1
-		#if there is something do if not skip
+
+		# only paste the results if there are
 		if [ -s $composition1 ]; then
-			#created or copied group
+			#filter created or copied group events
 			grep -E "was copied by|was added by" $composition1 > $composition2
 			if [ -s $composition2 ]; then
 				{	echo -e "--- created/ copied ---\\n"
 					cat $composition2
-					changed=yes
+					changed=true
 				} >> $composition3
 			fi
 
-			# deleted group
+			# filter deleted group events
 			grep "was deleted by" $composition1 > $composition2
 			if [ -s $composition2 ]; then
 				{	echo -e "--- deleted ---\\n"
 					cat $composition2
-					changed=yes
+					changed=true
 				} >> $composition3
 			fi
 
-			# sombody was added to servergroup
+			# filter somebodys group changed
 			grep "was added to" $composition1 > $composition2
 			if [ -s $composition2 ]; then
 				{	echo -e "--- added to---\\n"
 					cat $composition2
-					changed=yes
+					changed=true
 				} >> $composition3
 			fi
 
-			#somebody was removed from a group
+			# filter somebody got removed from a group
 			grep "was removed from" $composition1 > $composition2
 			if [ -s $composition2 ]; then
 				{	echo -e "--- removed from---\\n"
 					cat $composition2
-					changed=yes
+					changed=true
 				} >> $composition3
 			fi
 		fi
 
-		#collect all groupchange infos
-		if [ "$changed" = yes ]; then
+		# if "changed" = true paste all results in this mask
+		if [ "$changed" = true ]; then
 			{	echo -e "---- Group ----"
 			 	cat $composition3
 			 	echo -e "\\n---- Group End ----"
@@ -346,7 +359,6 @@ filter_groups()
 }
 
 ###### MAIN CODE SECTION ######
-
 #run all preparations and inital checks
 # clear old stuff
 clearcomp -all

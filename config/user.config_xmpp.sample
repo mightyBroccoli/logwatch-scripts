@@ -1,8 +1,9 @@
 ### teamspeak_log_xmpp_push
-# just the username not the complete jid
+#
+# xmpp username not the complete jid
 xmpp_username=FROM
 xmpp_password=PASSWORD
-# the corresponding xmpp server for the username above
+# the corresponding xmpp server for the username above with out the @
 xmpp_server=SERVER.TLD
 # the complete jid of the recipient
 xmpp_recipient=TO@ANOTHERSERVER.TLD
@@ -13,6 +14,7 @@ ressource=RANDOMSHIT
 #
 ## disable filter features ##
 # set these line to false to disable a specific filter (default = yes)
+# shellcheck is not happy about commented out default on
 #
 #enable_server=false
 #

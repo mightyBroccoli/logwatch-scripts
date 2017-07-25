@@ -29,33 +29,26 @@ tslogs=/etc/teamspeak3-server_linux_amd64/logs
 service_script=ts3server.service
 tsuser=teamspeak
 
+#### DONT CHANGE FROM HERE ####
 #log files
 logfiles=$tmp_directory/teamspeak_daily_log_files.txt
 daily_log=$tmp_directory/teamspeak_daily_log.txt
 
-# comppositon variables
+# compositon variables
 composition1=$tmp_directory/composition1.txt
 composition2=$tmp_directory/composition2.txt
 composition3=$tmp_directory/composition3.txt
 message_body=$tmp_directory/teamspeak_log_messagebody.txt
 mailcomposition=$tmp_directory/teamspeak_mail_composition.txt
 
+# debug parameter
+debug=false
 
 ###### FUNCTION SECTION ######
-clearcomp()
-{
-	if [ "$1" = "-all" ]; then
-		#deleting possible old content
-		rm -f "$composition1" "$composition2" "$logfiles" "$daily_log" "$message_body" "$mailcomposition"
-	fi
-	# remove the composition files
-	rm -f "$composition1" "$composition2" "$composition3"
-	changed=no
-}
-
 ## preparations
 prerun_check()
 {
+	# check if all commands needed to run are present in $PATH
 	needed_commands="printf rm ls echo grep sort cat date sendmail"
 	missing_counter=0
 	for needed_command in $needed_commands; do
@@ -72,10 +65,11 @@ prerun_check()
 
 	#check if tmp directory is present if not create it
 	if [ ! -d "$tmp_directory" ]; then
-		mkdir $tmp_directory
+		mkdir "$tmp_directory"
 	fi
 
 	#first run check
+	# check for presents of the configfile if not exit
 	if [ ! -f "$configfile" ]; then
 		if [ -f "$backupconf" ]; then
 			echo -e "no config inside $tmp_directory using $backupconf"
@@ -105,28 +99,78 @@ prerun_check()
 collect_and_prepare()
 {
 	## log file selection
-	#get the currently used logfiles
-	ls -t $tslogs | head -n2 | sort > $logfiles
+	# get the currently used logfiles
+	ls -t "$tslogs" | head -n2 | sort > "$logfiles"
 
-	#from the $logfiles get everything from today
-	grep "$(date -d "yesterday" '+%Y-%m-%d')" "$tslogs/$(sed -n '1p' $logfiles)" >> $daily_log
-	grep "$(date -d "yesterday" '+%Y-%m-%d')" "$tslogs/$(sed -n '2p' $logfiles)" >> $daily_log
+	# from the $logfiles get everything from today
+	grep "$(date -d "$1" '+%Y-%m-%d')" "$tslogs/$(sed -n '1p' $logfiles)" >> $daily_log
+	grep "$(date -d "$1" '+%Y-%m-%d')" "$tslogs/$(sed -n '2p' $logfiles)" >> $daily_log
+}
+
+###### General Functions ######
+clearcomp()
+{
+	if [ "$1" = "-all" ]; then
+		#deleting possible old content
+		rm -f "$composition1" "$composition2" "$logfiles" "$daily_log" "$message_body" "$mailcomposition"
+	fi
+	# remove the composition files
+	rm -f "$composition1" "$composition2" "$composition3"
+	changed=false
+}
+
+###### Mail ######
+start_finish()
+{
+	# function to generate sections header
+	if [ "$1" = "--teamspeak-start" ]; then
+		echo -e "-------------------- Teamspeak End -----------------------" >> $message_body
+	fi
+	if [ "$1" = "--teamspeak-end" ]; then
+		echo -e "-------------------- Teamspeak End -----------------------" >> $message_body
+	fi
+}
+
+archive_mail()
+{
+	# only run this functions if $enable_archive is true
+	if [ "$enable_archive" != "false" ]; then
+		#check if archive directory is present
+		if [ ! -d "$archive" ]; then
+			mkdir "$tmp_directory"
+		fi
+		cat "$message_body" >> $archive/teamspeak_report.log
+	fi
+}
+
+send_mail()
+{
+	# only send mails if $email = yes
+	if [ "$email" = yes ]; then
+		#file is not empty
+		{	echo -e "To: $mailaddr_to"
+		 	echo -e "From: $mailaddr_from"
+		 	echo -e "Subject: LogReport Teamspeak $(date -d "yesterday" '+%d.%m.%Y')\\n"
+		 	cat "$message_body"
+		} >> "$mailcomposition"
+		su "$tsuser" -s /bin/sh -c "cat $mailcomposition | /usr/sbin/sendmail -t"
+	fi
 }
 
 ###### FILTER CODE SECTION ######
-
 general_filter()
 {
+	# general filter which will shift through all positional parameters and filter for that
 	while [ "$1" ]
 	do
-		grep -E "$1" $daily_log | sort >> $composition1
+		grep -E "$1" "$daily_log" | sort >> "$composition1"
 
-		#paste file only when log file has data in it
-		if [ -s $composition1 ]; then
+		# only paste the results if there are
+		if [ -s "$composition1" ]; then
 			{	echo -e "------------------- $1 --------------------\\n"
-			 	cat $composition1
+			 	cat "$composition1"
 			 	echo -e "----------------- $1 End ------------------\\n"
-			} >> $message_body
+			} >> "$message_body"
 		fi
 		clearcomp
 		shift
@@ -135,75 +179,76 @@ general_filter()
 
 filter_server()
 {
-	#report header with systemd script
+	# generate report header with info from the systemd script
 	{	echo -e "LogReport Teamspeak $(date -d "yesterday" '+%d.%m.%Y')\\n"
 		start_finish --teamspeak-start
-		#server
+		# server section
 		echo -e "-------------------- Server -----------------------\\n"
 		echo -e "Status : $(systemctl status $service_script)\\n"
-	} >> $message_body
+	} >> "$message_body"
 
-	## Server
-	if [ "$enable_server" != false ]; then
+	# only run this filter if $enable_server is true
+	if [ "$enable_server" != "false" ]; then
 		general_filter "ServerMain|stopped" "ERROR" "WARNING" "Accounting" "CIDRManager"
 	fi
 
-	echo -e "------------------ Server End ---------------------\\n" >> $message_body
+	echo -e "------------------ Server End ---------------------\\n" >> "$message_body"
 }
 
 filter_group()
 {
-	## enable Group changes
-	if [ "$enable_groups" != false ]; then
-		grep -E "was deleted by|was copied by|was added to|was added by|was removed from" $daily_log | grep -v "permission '" >>  $composition1
-		#paste file only when log file has data in it
-		if [ -s $composition1 ]; then
-			echo -e "------------------ Group change -------------------" >> $message_body
+	# only run this filter if $enable_groups is true
+	if [ "$enable_groups" != "false" ]; then
+		grep -E "was deleted by|was copied by|was added to|was added by|was removed from" "$daily_log" | grep -v "permission '" >>  "$composition1"
 
-			#created or copied group
+		# only paste the results if there are
+		if [ -s "$composition1" ]; then
+			echo -e "------------------ Group change -------------------" >> "$message_body"
+
+			# filter for created or copied group events
 			grep -E "was copied by|was added by" $composition1 > $composition2
-			if [ -s $composition2 ]; then
-				{	echo -e "--- created/ copied ---\n"
-					cat $composition2
-					changed=yes
-				} >> $composition3
+			if [ -s "$composition2" ]; then
+				{	echo -e "--- created/ copied ---\\n"
+					cat "$composition2"
+					changed=true
+				} >> "$composition3"
 			fi
 
-			# deleted group
-			grep "was deleted by" $composition1 > $composition2
-			if [ -s $composition2 ]; then
-				{	echo -e "--- deleted ---\n"
-					cat $composition2
-					changed=yes
-				} >> $composition3
+			# filter for deleted group events
+			grep "was deleted by" "$composition1" > "$composition2"
+			if [ -s "$composition2" ]; then
+				{	echo -e "--- deleted ---\\n"
+					cat "$composition2"
+					changed=true
+				} >> "$composition3"
 			fi
 
-			# sombody was added to servergroup
-			grep "was added to" $composition1 > $composition2
-			if [ -s $composition2 ]; then
-				{	echo -e "--- added to---\n"
-					cat $composition2
-					changed=yes
-				} >> $composition3
+			# filter if sombody was added to servergroup
+			grep "was added to" "$composition1" > "$composition2"
+			if [ -s "$composition2" ]; then
+				{	echo -e "--- added to---\\n"
+					cat "$composition2"
+					changed=true
+				} >> "$composition3"
 			fi
 
-			#somebody was removed from a group
-			grep "was removed from" $composition1 > $composition2
-			if [ -s $composition2 ]; then
-				{	echo -e "--- removed from---\n"
-					cat $composition2
-					changed=yes
-				} >> $composition3
+			#filter if somebody was removed from a group
+			grep "was removed from" "$composition1" > "$composition2"
+			if [ -s "$composition2" ]; then
+				{	echo -e "--- removed from---\\n"
+					cat "$composition2"
+					changed=true
+				} >> "$composition3"
 			fi
 
-			#collect all groupchange infos
-			if [ "$changed" = yes ]; then
+			# if "changed" is true then paste the results in the mask
+			if [ "$changed" = "true" ]; then
 				{	echo -e "---- Group ----"
-				 	cat $composition3
-				 	echo -e "\n---- Group End ----"
-				} >> $message_body
+				 	cat "$composition3"
+				 	echo -e "\\n---- Group End ----"
+				} >> "$message_body"
 			fi
-			echo -e "---------------- Group change End -----------------\\n" >> $message_body
+			echo -e "---------------- Group change End -----------------\\n" >> "$message_body"
 		fi
 		clearcomp
 	fi
@@ -211,17 +256,18 @@ filter_group()
 
 filter_channel()
 {
-	## enable Channel changes
-	if [ "$enable_channel" != false ]; then
-		##channel created
-		grep "channel" $daily_log | grep "VirtualServerBase">> $composition1
+	# only run this filter if $enable_channel is true
+	if [ "$enable_channel" != "false" ]; then
 
-		#paste file only when log file has data in it
-		if [ -s $composition1 ]; then
+		# filter for channel creation events
+		grep "channel" "$daily_log" | grep "VirtualServerBase">> "$composition1"
+
+		# only paste the results if there are
+		if [ -s "$composition1" ]; then
 			{	echo -e "--------------------- Channel ---------------------\\n"
-			 	cat $composition1
+			 	cat "$composition1"
 			 	echo -e "------------------- Channel End -------------------\\n"
-			} >> $message_body
+			} >> "$message_body"
 		fi
 		clearcomp
 	fi
@@ -229,69 +275,28 @@ filter_channel()
 
 filter_user_activity()
 {
-	## Complaint
-	if [ "$enable_complaint" != false ]; then
+	# only enable this filter if $enable_complaint is true
+	if [ "$enable_complaint" != "false" ]; then
 		general_filter "^complaint"
 	fi
 
-	## Ban
-	if [ "$enable_ban" != false ]; then
+	# only enable this filter if $enable_ban is true
+	if [ "$enable_ban" != "false" ]; then
 		general_filter "ban added|BanManager"
 	fi
 
-	## Kick
-	if [ "$enable_kick" != false ]; then
+	# only enalbe this filter if $enable_kick is true
+	if [ "$enable_kick" != "false" ]; then
 		general_filter "reason 'invokerid"
 	fi
 
-	## Permission Changes
-	if [ "$enable_perm" != false ]; then
-		general_filter   "permission" 
-	fi
-}
-
-###### Mail ######
-
-start_finish()
-{
-
-	if [ "$1" = "--teamspeak-start" ]; then
-		echo -e "-------------------- Teamspeak End -----------------------" >> $message_body
-	fi
-
-	if [ "$1" = "--teamspeak-end" ]; then
-		echo -e "-------------------- Teamspeak End -----------------------" >> $message_body
-	fi
-}
-
-archive_mail()
-{
-	## archive daily reports
-	if [ "$enable_archive" != false ]; then
-		#check if archive directory is present
-		if [ ! -d "$archive" ]; then
-			mkdir $tmp_directory
-		fi
-		cat $message_body >> $archive/teamspeak_report.log
-	fi
-}
-
-send_mail()
-{
-	#mail daily reports
-	if [ "$email" = yes ]; then
-		#file is not empty
-		{	echo -e "To: $mailaddr_to"
-		 	echo -e "From: $mailaddr_from"
-		 	echo -e "Subject: LogReport Teamspeak $(date -d "yesterday" '+%d.%m.%Y')\\n"
-		 	cat $message_body
-		} >> $mailcomposition
-		su $tsuser -s /bin/sh -c "cat $mailcomposition | /usr/sbin/sendmail -t"
+	# only enable this filter if $enable_perm is true
+	if [ "$enable_perm" != "false" ]; then
+		general_filter   "permission"
 	fi
 }
 
 ###### MAIN CODE SECTION ######
-
 #run all preparations and inital checks
 # clear old stuff
 clearcomp -all
@@ -300,7 +305,14 @@ clearcomp -all
 prerun_check
 
 # collect and prepare logs and needed files
-collect_and_prepare
+
+if [ "$debug" = "true" ]; then
+	#forcefully use the logentries from today
+	collect_and_prepare today
+else
+	# the normal routine
+	collect_and_prepare yesterday
+fi
 
 # if enabled filter server loglines
 filter_server
@@ -308,7 +320,7 @@ filter_server
 # if enabled filter group changes
 filter_group
 
-# if enabled filter channel changes
+# if enabled filter channel changesPermission
 filter_channel
 
 # if enabled filter user activity (ban / kick / complaint / permission changes)
