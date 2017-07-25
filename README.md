@@ -52,7 +52,7 @@ This is just an example for a notification pushed via XMPP. The script will only
 ```
 
 ## Donations
-If somebody is that enthusiastic about this project and does want to donate me some coffee. I would be really pleased and happy to provide 2 possible ways PayPal or Bitcoin. 
+If somebody is that enthusiastic about this project and does want to donate me some coffee, I would be really pleased and happy. I provide two possibilities: PayPal and Bitcoin
 <div>
   <a href="bitcoin:1QJZTWenBvdLWTUachpLLd2dLXAZMGeU87">
   <img src="https://magicbroccoli.de/images/bitcoin_qr.png" ></a>
