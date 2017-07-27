@@ -65,7 +65,7 @@ prerun_check()
 
 	#check if tmp directory is present if not create it
 	if [ ! -d "$tmp_directory" ]; then
-		mkdir "$tmp_directory"
+		mkdir -p "$tmp_directory"
 	fi
 
 	#first run check
@@ -137,7 +137,7 @@ archive_mail()
 	if [ "$enable_archive" != "false" ]; then
 		#check if archive directory is present
 		if [ ! -d "$archive" ]; then
-			mkdir "$tmp_directory"
+			mkdir -p "$tmp_directory"
 		fi
 		cat "$message_body" >> $archive/teamspeak_report.log
 	fi

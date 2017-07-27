@@ -70,7 +70,7 @@ prerun_check()
 
 	#check if tmp directory is present if not create it
 	if [ ! -d "$tmp_directory" ]; then
-		mkdir $tmp_directory
+		mkdir -p $tmp_directory
 	fi
 
 	#first run check
