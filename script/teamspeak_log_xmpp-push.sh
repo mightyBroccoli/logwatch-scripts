@@ -28,10 +28,11 @@ configfile_secured=$tmp_directory/.tmp.config
 backupconf=/var/backups/teamspeak_log_xmpp-push_user.config
 
 #### DONT CHANGE FROM HERE ####
-# comppositon variables
+# compositon variables
 composition1=$tmp_directory/composition1.txt
 composition2=$tmp_directory/composition2.txt
 composition3=$tmp_directory/composition3.txt
+final_composition=$tmp_directory/final_composition.txt
 
 server=$tmp_directory/server.txt
 complaint=$tmp_directory/complaint.txt
@@ -142,7 +143,7 @@ clearcomp()
 {
 	if [ "$1" = "-all" ]; then
 		#deleting possible old content
-		rm -f "$logfiles" "$selection_today_unsorted" "$selection_today_sorted" "$selection_removed_old" "$server" "$complaint" "$ban" "$kick" "$groupchange" "$channel"
+		rm -f "$logfiles" "$selection_today_unsorted" "$selection_today_sorted" "$selection_removed_old" "$server" "$complaint" "$ban" "$kick" "$groupchange" "$channel" "$final_composition"
 	fi
 	# remove the composition files
 	rm -f "$composition1" "$composition2" "$composition3"
@@ -176,8 +177,11 @@ fi
 
 pushstuff()
 {
-	# xmpp push function with variable message
-	sendxmpp -u "$xmpp_username" -p "$xmpp_password" -j "$xmpp_server" --tls --resource "$ressource" "$xmpp_recipient" --message "$1"
+	# remove empty lines and push the result
+	grep -v "^$" $final_composition | sendxmpp -u "$xmpp_username" -p "$xmpp_password" -j "$xmpp_server" --tls --resource "$ressource" "$xmpp_recipient"
+
+	# purge tmp files after push
+	clearcomp -all
 }
 
 ###### FILTER CODE SECTION ######
@@ -190,11 +194,11 @@ filter_server()
 
 		# only paste the results if there are
 		if [ -s $composition1 ]; then
-			{	echo -e "---- Server ----\\n"
+			{	echo -e "\\n---- Server ----\\n"
 				cat $composition1
 				echo -e "\\n---- Server End ----"
 			} >> $server
-			pushstuff $server
+			cat $server >> $final_composition
 		fi
 		clearcomp
 	fi
@@ -209,11 +213,11 @@ filter_complaint()
 
 		# only paste the results if there are
 		if [ -s $composition1 ]; then
-			{	echo -e "---- Complaint ----\\n"
+			{	echo -e "\\n---- Complaint ----\\n"
 				cat $composition1
 				echo -e "\\n---- Complaint End ----"
 			} >> $complaint
-			pushstuff $complaint
+			cat $complaint >> $final_composition
 		fi
 		clearcomp
 	fi
@@ -228,11 +232,11 @@ filter_kick()
 
 		# only paste the results if there are
 		if [ -s $composition1 ]; then
-			{	echo -e "---- Kick ----\\n"
+			{	echo -e "\\n---- Kick ----\\n"
 				cat $composition1
 				echo -e "\\n---- Kick End ----"
 			} >> $kick
-			pushstuff $kick
+			cat $kick >> $final_composition
 		fi
 		clearcomp
 	fi
@@ -247,11 +251,11 @@ filter_channel()
 
 		# only paste the results if there are
 		if [ -s $composition1 ]; then
-			{	echo -e "---- Channel ----\\n"
+			{	echo -e "\\n---- Channel ----\\n"
 				cat $composition1
 				echo -e "\\n---- Channel End ----"
 			} >> $channel
-			pushstuff $channel
+			cat $channel >> $final_composition
 		fi
 		clearcomp
 	fi
@@ -270,7 +274,7 @@ filter_ban()
 			# filter added bans
 			grep -E 'ban added' $composition1 > $composition2
 			if [ -s $composition2 ]; then
-				{	echo -e "---yes Ban added ---\\n"
+				{	echo -e "--- Ban added ---\\n"
 					cat $composition2
 					# change the "changed" value to true to indicate something has changed
 					changed=true
@@ -290,11 +294,11 @@ filter_ban()
 
 		# if "changed" is true paste the results in this mask
 		if [ "$changed" = true ]; then
-			{	echo -e "---- Ban ----"
+			{	echo -e "\\n---- Ban ----"
 				cat $composition3
 				echo -e "\\n---- Ban End ----"
 			}>> $ban
-			pushstuff $ban
+			cat $ban >> $final_composition
 		fi
 		clearcomp
 	fi
@@ -348,11 +352,11 @@ filter_groups()
 
 		# if "changed" = true paste all results in this mask
 		if [ "$changed" = true ]; then
-			{	echo -e "---- Group ----"
+			{	echo -e "\\n---- Group ----"
 			 	cat $composition3
 			 	echo -e "\\n---- Group End ----"
 			} >> $groupchange
-			pushstuff $groupchange
+			cat $groupchange >> $final_composition
 		fi
 		clearcomp
 	fi
@@ -386,3 +390,6 @@ filter_groups
 
 ## Channel
 filter_channel
+
+## Push Message
+pushstuff
