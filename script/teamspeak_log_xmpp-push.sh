@@ -178,7 +178,7 @@ fi
 
 pushstuff()
 {
-	if [ ! -s $final_composition ]; then
+	if [ -s $final_composition ]; then
 		# remove empty lines and push the result
 		grep -v "^$" $final_composition | sendxmpp -u "$xmpp_username" -p "$xmpp_password" -j "$xmpp_server" --tls --resource "$ressource" "$xmpp_recipient"
 	fi
