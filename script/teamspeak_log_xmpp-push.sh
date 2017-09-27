@@ -74,11 +74,6 @@ prerun_check()
 		mkdir -p $tmp_directory
 	fi
 	
-	#check if tmp directory is present if not create it
-	if [ ! -f "$final_composition" ]; then
-		touch $final_composition
-	fi
-
 	#first run check
 	if [ ! -f "$configfile" ]; then
 		if [ -f "$backupconf" ]; then
@@ -146,6 +141,7 @@ collect_and_prepare()
 ###### General Functions ######
 clearcomp()
 {
+	# check if there is a final composition push if true
 	if [ "$1" = "-all" ]; then
 		#deleting possible old content
 		rm -f "$logfiles" "$selection_today_unsorted" "$selection_today_sorted" "$selection_removed_old" "$server" "$complaint" "$ban" "$kick" "$groupchange" "$channel" "$final_composition"
@@ -182,8 +178,10 @@ fi
 
 pushstuff()
 {
-	# remove empty lines and push the result
-	grep -v "^$" $final_composition | sendxmpp -u "$xmpp_username" -p "$xmpp_password" -j "$xmpp_server" --tls --resource "$ressource" "$xmpp_recipient"
+	if [ ! -s $final_composition ]; then
+		# remove empty lines and push the result
+		grep -v "^$" $final_composition | sendxmpp -u "$xmpp_username" -p "$xmpp_password" -j "$xmpp_server" --tls --resource "$ressource" "$xmpp_recipient"
+	fi
 
 	# purge tmp files after push
 	clearcomp -all
