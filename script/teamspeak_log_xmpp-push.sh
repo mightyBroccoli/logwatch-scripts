@@ -73,6 +73,11 @@ prerun_check()
 	if [ ! -d "$tmp_directory" ]; then
 		mkdir -p $tmp_directory
 	fi
+	
+	#check if tmp directory is present if not create it
+	if [ ! -f "$final_composition" ]; then
+		touch $final_composition
+	fi
 
 	#first run check
 	if [ ! -f "$configfile" ]; then
