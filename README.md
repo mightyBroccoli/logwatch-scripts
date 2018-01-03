@@ -1,3 +1,5 @@
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/2e2526c5266848f8ae3e03a87079bc49)](https://www.codacy.com/app/nico.wellpott/logwatch-scripts?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=mightyBroccoli/logwatch-scripts&amp;utm_campaign=Badge_Grade)
+
 # TeamSpeak3 Logwatch Script
 Script which iterates through the latest teamspeak logfiles and captures the important parts. Main goal is to filter relevant loglines from the past day (UTC). Finally the selected lines are being formatted nicely, so it is easy to see what happened.
 There are two possible notification modes:
