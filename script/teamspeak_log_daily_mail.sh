@@ -17,6 +17,8 @@
 # replace mailaddr_to/_from and possibly the tslog path to fit your needs
 # place inside /etc/cron.daily to run this script on a daily basis
 
+#### Settings ####
+
 # user specific config file
 tmp_directory=/tmp/teamspeak/daily_mail
 archive=/var/log/teamspeak
@@ -24,13 +26,15 @@ configfile=$tmp_directory/.user.config
 configfile_secured=$tmp_directory/tmp.config
 backupconf=/var/backups/teamspeak_log_daily_mail_user.config
 
-#system specific variables
+# system specific variables
 tslogs=/etc/teamspeak3-server_linux_amd64/logs
 service_script=ts3server.service
 tsuser=teamspeak
 
-#### DONT CHANGE FROM HERE ####
-#log files
+#### Business logic ####
+#### DO NOT ALTER ####
+
+# log files
 logfiles=$tmp_directory/teamspeak_daily_log_files.txt
 daily_log=$tmp_directory/teamspeak_daily_log.txt
 
@@ -44,8 +48,9 @@ mailcomposition=$tmp_directory/teamspeak_mail_composition.txt
 # debug parameter
 debug=false
 
-###### FUNCTION SECTION ######
-## preparations
+#### FUNCTION SECTION ####
+
+# preparations
 prerun_check()
 {
 	# check if all commands needed to run are present in $PATH
@@ -63,12 +68,12 @@ prerun_check()
 	  exit 11
 	fi
 
-	#check if tmp directory is present if not create it
+	# check if tmp directory is present if not create it
 	if [ ! -d "$tmp_directory" ]; then
 		mkdir -p "$tmp_directory"
 	fi
 
-	#first run check
+	# first run check
 	# check for presents of the configfile if not exit
 	if [ ! -f "$configfile" ]; then
 		if [ -f "$backupconf" ]; then
@@ -107,11 +112,12 @@ collect_and_prepare()
 	grep "$(date -d "$1" '+%Y-%m-%d')" "$tslogs/$(sed -n '2p' $logfiles)" >> $daily_log
 }
 
-###### General Functions ######
+#### General Functions ####
+
 clearcomp()
 {
 	if [ "$1" = "-all" ]; then
-		#deleting possible old content
+		# deleting possible old content
 		rm -f "$composition1" "$composition2" "$logfiles" "$daily_log" "$message_body" "$mailcomposition"
 	fi
 	# remove the composition files
@@ -119,7 +125,8 @@ clearcomp()
 	changed=false
 }
 
-###### Mail ######
+#### Mail ####
+
 start_finish()
 {
 	# function to generate sections header
@@ -135,7 +142,7 @@ archive_mail()
 {
 	# only run this functions if $enable_archive is true
 	if [ "$enable_archive" != "false" ]; then
-		#check if archive directory is present
+		# check if archive directory is present
 		if [ ! -d "$archive" ]; then
 			mkdir -p "$tmp_directory"
 		fi
@@ -147,7 +154,7 @@ send_mail()
 {
 	# only send mails if $email = yes
 	if [ "$email" = yes ]; then
-		#file is not empty
+		# file is not empty
 		{	echo -e "To: $mailaddr_to"
 		 	echo -e "From: $mailaddr_from"
 		 	echo -e "Subject: LogReport Teamspeak $(date -d "yesterday" '+%d.%m.%Y')\\n"
@@ -157,7 +164,8 @@ send_mail()
 	fi
 }
 
-###### FILTER CODE SECTION ######
+#### FILTER CODE SECTION ####
+
 general_filter()
 {
 	# general filter which will shift through all positional parameters and filter for that
@@ -165,7 +173,7 @@ general_filter()
 	do
 		grep -E "$1" "$daily_log" | sort >> "$composition1"
 
-		# only paste the results if there are
+		# only paste the results if there are any
 		if [ -s "$composition1" ]; then
 			{	echo -e "------------------- $1 --------------------\\n"
 			 	cat "$composition1"
@@ -232,7 +240,7 @@ filter_group()
 				} >> "$composition3"
 			fi
 
-			#filter if somebody was removed from a group
+			# filter if somebody was removed from a group
 			grep "was removed from" "$composition1" > "$composition2"
 			if [ -s "$composition2" ]; then
 				{	echo -e "--- removed from---\\n"
@@ -296,8 +304,9 @@ filter_user_activity()
 	fi
 }
 
-###### MAIN CODE SECTION ######
-#run all preparations and inital checks
+#### MAIN CODE SECTION ####
+
+# run all preparations and inital checks
 # clear old stuff
 clearcomp -all
 
@@ -307,7 +316,7 @@ prerun_check
 # collect and prepare logs and needed files
 
 if [ "$debug" = "true" ]; then
-	#forcefully use the logentries from today
+	# forcefully use the logentries from today
 	collect_and_prepare today
 else
 	# the normal routine

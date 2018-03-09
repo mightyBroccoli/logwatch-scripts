@@ -20,14 +20,18 @@
 # run this script every x minutes to send the lines accumulated in the log files via cron eg
 # */x * * * * /PATH/teamspeak_log_xmpp-push.sh
 
-#variables
+#### Settings ####
+
+# variables
 tmp_directory=/tmp/teamspeak/xmpp_push
 tslogs=/etc/teamspeak3-server_linux_amd64/logs
 configfile=$tmp_directory/.user.config
 configfile_secured=$tmp_directory/.tmp.config
 backupconf=/var/backups/teamspeak_log_xmpp-push_user.config
 
-#### DONT CHANGE FROM HERE ####
+#### Business logic ####
+#### DO NOT ALTER ####
+
 # compositon variables
 composition1=$tmp_directory/composition1.txt
 composition2=$tmp_directory/composition2.txt
@@ -52,7 +56,8 @@ currentday=$(date -u '+%Y-%m-%d')
 # debug parameter
 debug=false
 
-###### PRE RUN FUNCTION SECTION ######
+#### PRE RUN FUNCTION SECTION ####
+
 prerun_check()
 {
 	needed_commands="rm ls echo grep sort cat date sendxmpp"
@@ -69,18 +74,18 @@ prerun_check()
 		exit 11
 	fi
 
-	#check if tmp directory is present if not create it
+	# check if tmp directory is present if not create it
 	if [ ! -d "$tmp_directory" ]; then
 		mkdir -p $tmp_directory
 	fi
 	
-	#first run check
+	# first run check
 	if [ ! -f "$configfile" ]; then
 		if [ -f "$backupconf" ]; then
 			echo -e "no config inside $tmp_directory using $backupconf"
 			cp "$backupconf" "$configfile"
 		else
-			#config file is not present
+			# config file is not present
 			echo -e "no config file has been set. copy the sample config file to $configfile"
 			exit 10
 		fi
@@ -98,15 +103,15 @@ prerun_check()
 	# source the config file
 	source  "$configfile"
 
-	#is the history relevant?
-	#check if date file is present
+	# is the history relevant?
+	# check if date file is present
 	if [ ! -f "$tmp_directory/date.txt" ]; then
 		date -u '+%Y-%m-%d' > $tmp_directory/date.txt
 	fi
 	if [ ! "$currentday" = "$(cat $tmp_directory/date.txt)" ]; then
-		#they are not the same remove the old history
+		# they are not the same remove the old history
 		rm $log_history
-		#set the new date inside the date file
+		# set the new date inside the date file
 		date -u '+%Y-%m-%d' > $tmp_directory/date.txt
 	fi
 	clearcomp -all
@@ -115,17 +120,17 @@ prerun_check()
 collect_and_prepare()
 {
 	## log file selection
-	#get the currently used logfiles
+	# get the currently used logfiles
 	ls -t $tslogs | head -n2 | sort > $logfiles
 
-	#from the $logfiles get everything from today
+	# from the $logfiles get everything from today
 	grep "$(date -u '+%Y-%m-%d')" "$tslogs/$(sed -n '1p' $logfiles)" > $log_selection_today_unsorted
 	grep "$(date -u '+%Y-%m-%d')" "$tslogs/$(sed -n '2p' $logfiles)" >> $log_selection_today_unsorted
 
 	# sort logentries
 	sort $log_selection_today_unsorted > $log_selection_today
 
-	#if  $log_history file exists append if not create it
+	# if  $log_history file exists append if not create it
 	if [ -s  $log_history ]; then
 		#it does exist
 		grep -v -F -x -f $log_history $log_selection_today  > $log_removed_old
@@ -138,7 +143,8 @@ collect_and_prepare()
 	fi
 }
 
-###### General Functions ######
+#### General Functions ####
+
 clearcomp()
 {
 	# check if there is a final composition push if true
@@ -187,8 +193,9 @@ pushstuff()
 	clearcomp -all
 }
 
-###### FILTER CODE SECTION ######
-# Filter Server Messages Accounting/ ServerMain / Warning / ERROR / CIDRManager
+#### FILTER CODE SECTION ####
+
+# filter server messages accounting/ ServerMain / Warning / ERROR / CIDRManager
 filter_server()
 {
 	# only run this filter if $enable_server is true
@@ -207,7 +214,7 @@ filter_server()
 	fi
 }
 
-# Filter complaints
+# filter complaints
 filter_complaint()
 {
 	# only run this filter if $enable_complaint is true
@@ -226,7 +233,7 @@ filter_complaint()
 	fi
 }
 
-# Filter Kick messages
+# filter kick messages
 filter_kick()
 {
 	# only run this filter if $enable_kick is true
@@ -245,7 +252,7 @@ filter_kick()
 	fi
 }
 
-# Filter Channels added /deleted / edited
+# filter channels added / deleted / edited
 filter_channel()
 {
 	# only run this filter if $enable_channel is true
@@ -264,7 +271,7 @@ filter_channel()
 	fi
 }
 
-# Filter bans added / deleted and general BanManager messages
+# filter bans added / deleted and general BanManager messages
 filter_ban()
 {
 	# only run this filter if $enable_ban is true
@@ -307,7 +314,7 @@ filter_ban()
 	fi
 }
 
-# Filter Group changes
+# filter group changes
 filter_groups()
 {
 	# only enable this filter if $enable_groups is true
@@ -316,7 +323,7 @@ filter_groups()
 
 		# only paste the results if there are
 		if [ -s $composition1 ]; then
-			#filter created or copied group events
+			# filter created or copied group events
 			grep -E "was copied by|was added by" $composition1 > $composition2
 			if [ -s $composition2 ]; then
 				{	echo -e "--- created/ copied ---\\n"
@@ -365,34 +372,38 @@ filter_groups()
 	fi
 }
 
-###### MAIN CODE SECTION ######
-#run all preparations and inital checks
+#### MAIN CODE SECTION ####
+
+# run all preparations and inital checks
 # clear old stuff
 clearcomp -all
+
 # prepare folders and config files
 prerun_check
+
 # collect and prepare logs and needed files
 collect_and_prepare
+
 #debug parameters
 debug
 
 ## server
 filter_server
 
-## Complaint
+## complaint
 filter_complaint
 
-## Ban
+## ban
 filter_ban
 
-## Kick
+## kick
 filter_kick
 
-## Group change
+## group change
 filter_groups
 
-## Channel
+## channel
 filter_channel
 
-## Push Message
+## push message
 pushstuff
